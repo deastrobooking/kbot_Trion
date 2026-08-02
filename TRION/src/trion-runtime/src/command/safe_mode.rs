@@ -3,7 +3,7 @@
 //! zero-torque/brake posture; exit happens only on an explicit recovery
 //! command, never automatically.
 
-use crate::events::{EventKind, EventLog};
+use crate::telemetry::events::{EventKind, EventLog};
 use std::sync::Arc;
 use tokio::sync::watch;
 

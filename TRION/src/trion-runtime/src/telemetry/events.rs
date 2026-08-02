@@ -1,7 +1,7 @@
 //! Structured, bounded event log with JSONL export (TR-P4-030). Events are
 //! the evidence trail for FDIR behavior and post-mission reports.
 
-use crate::clock::RuntimeClock;
+use crate::time::RuntimeClock;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};

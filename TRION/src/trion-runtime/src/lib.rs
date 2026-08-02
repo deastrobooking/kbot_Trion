@@ -1,23 +1,26 @@
 //! trion-runtime — mission-critical runtime supervision for the Trion space
-//! operations engineer (walking skeleton of the P4 pillar).
+//! operations engineer (the P4 pillar of TRION/docs/PROJECT_PLAN.md).
 //!
-//! Implements TR-P4-001..003 (health telemetry), TR-P4-010..012 (heartbeat
-//! watchdog + restart escalation), TR-P4-020..022 (safe-mode), and TR-P4-030
-//! (structured event log). See `TRION/docs/REQUIREMENTS.md`.
+//! Module map (one directory per architectural tier):
+//!
+//! | Module      | Tier                                            | Requirements |
+//! |-------------|--------------------------------------------------|--------------|
+//! | [`time`]     | Single monotonic time base                       | TR-P4-002    |
+//! | [`telemetry`]| Health bus + structured event log                | TR-P4-001..003, TR-P4-030 |
+//! | [`fdir`]     | Watchdog + escalation supervisor                 | TR-P4-010..013 |
+//! | [`command`]  | Safe-mode; later command classes + authentication| TR-P4-020..021 (042, 050 future) |
 //!
 //! Safety/control separation (TR-P4-022): this crate must never depend on
 //! perception, network, or mission-control code.
 
-pub mod clock;
-pub mod events;
-pub mod health;
-pub mod safe_mode;
-pub mod supervisor;
-pub mod watchdog;
+pub mod command;
+pub mod fdir;
+pub mod telemetry;
+pub mod time;
 
-pub use clock::RuntimeClock;
-pub use events::{EventKind, EventLog, EventRecord};
-pub use health::{HealthBus, HealthLevel, HealthReport};
-pub use safe_mode::{ModeController, RunMode};
-pub use supervisor::{EscalationPolicy, ServiceController, Supervisor};
-pub use watchdog::{HeartbeatHandle, HeartbeatPolicy, ServiceDown, Watchdog};
+pub use command::safe_mode::{ModeController, RunMode};
+pub use fdir::supervisor::{EscalationPolicy, ServiceController, Supervisor};
+pub use fdir::watchdog::{HeartbeatHandle, HeartbeatPolicy, ServiceDown, Watchdog};
+pub use telemetry::events::{EventKind, EventLog, EventRecord};
+pub use telemetry::health::{HealthBus, HealthLevel, HealthReport};
+pub use time::RuntimeClock;

@@ -12,6 +12,8 @@ Implements (traced to [REQUIREMENTS.md](../../docs/REQUIREMENTS.md)):
 
 Safety/control separation (TR-P4-022): this crate must never grow dependencies on perception, network, or mission-control code.
 
+Source layout follows the workspace convention (one directory per architectural tier — `time/`, `telemetry/`, `fdir/`, `command/`; see [../README.md](../README.md)); `lib.rs` re-exports keep the public API flat and stable.
+
 ```bash
 cargo test                        # requirement-traced tests
 cargo run --bin walking_skeleton  # Phase 0 exit-criteria demo (~8 s)

@@ -3,7 +3,7 @@
 //! silence exceeds `miss_limit × interval`, guaranteeing detection within
 //! `(miss_limit + 1) × interval` plus one monitor tick.
 
-use crate::clock::{duration_ms, RuntimeClock};
+use crate::time::{duration_ms, RuntimeClock};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

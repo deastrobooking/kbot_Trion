@@ -1,10 +1,10 @@
 //! FDIR escalation supervisor (TR-P4-012, FDIR entry F-01): one bounded
 //! recovery path per fault, then safe-mode. No infinite retry loops.
 
-use crate::clock::{duration_ms, RuntimeClock};
-use crate::events::{EventKind, EventLog};
-use crate::safe_mode::ModeController;
-use crate::watchdog::ServiceDown;
+use crate::time::{duration_ms, RuntimeClock};
+use crate::telemetry::events::{EventKind, EventLog};
+use crate::command::safe_mode::ModeController;
+use crate::fdir::watchdog::ServiceDown;
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::{mpsc, watch};
