@@ -34,13 +34,13 @@ This document is the single source of truth for the next engineering cycle. It p
 | P1 | IMU health monitor + FDIR escalation | `TRION/src/trion-runtime/src/fdir/` | 🔲 Open | F-05 |
 | P1 | Actuator command sanity gate | `TRION/src/trion-runtime/src/command/gate.rs` | ✅ Core done | Joint-limit enforcement; KOS integration remains |
 | P1 | Trion policy service (ONNX via KOS) | `TRION/src/trion-policy-service/` | 🔲 Open | Replace direct-hardware inference |
-| P1 | Command authority + command classes | `TRION/src/trion-runtime/src/command/authority.rs` | 🔲 Open | TR-P4-042, TR-P4-050 |
+| P1 | Command authority + command classes | `TRION/src/trion-runtime/src/command/authority.rs` | ✅ Core done | TR-P4-042, TR-P4-050; credential adapter + queue execution remain |
 | P2 | Perception crate | `TRION/src/trion-perception/` | 🔲 Open | P2 localization |
-| P2 | Skill crate + autonomy ladder | `TRION/src/trion-skills/` | 🔲 Open | P1/P3 skills |
+| P2 | Skill crate + autonomy ladder | `TRION/src/trion-skills/` | 🟡 Executor + envelopes | Motion runners, force limits, evidence |
 | P2 | Full FDIR matrix (F-02…F-08) | `TRION/src/trion-runtime/src/fdir/` | 🔲 Open | P4 runtime |
 | P2 | Mission-control crate | `TRION/src/mission-control/` | 🔲 Open | P5 ground segment |
 | P3 | Manipulation policy training | `TRION/sim/` + `ksim-kbot` tasks | 🔲 Open | Phase 3 ISAM skills |
-| P3 | Task executor + human gates | `TRION/src/trion-skills/src/executor.rs` | 🔲 Open | Phase 2/3 plans |
+| P3 | Task executor + human gates | `TRION/src/trion-skills/src/executor.rs` | ✅ Core done | Phase 2/3 plan semantics; sim and mission-control coupling remain |
 
 ---
 
@@ -193,6 +193,8 @@ impl KosSafetyShim {
 ### 4.2 Command authority and command classes
 
 **Path:** `TRION/src/trion-runtime/src/command/authority.rs`
+
+**Implementation status:** the checked-in implementation supersedes the early sketch below. It adds bounded approval/principal state, monotonic anti-replay sequences, one-use authority decisions, structured events, and an explicit external-authentication trust boundary.
 
 **Purpose:** Implement TR-P4-042 (immediate / queued / commit-window commands) and TR-P4-050 (authentication, roles, two-step arming).
 
@@ -422,6 +424,8 @@ impl RobotManifest {
 
 **Design rule:** every skill returns a `SkillOutcome` that is recorded in the event log. Skills never command actuators directly; they request commands through the command authority layer.
 
+**Implemented foundation:** `model.rs` defines the serializable plan and skill envelopes; `executor.rs` provides bounded validation/execution, live conditions, deadlines, authenticated gates, and structured lifecycle events; `skills.rs` defines conservative initial ceilings for T-01/T-02/T-03. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md). Concrete motion runners and authority/safety-shim command forwarding remain open.
+
 ### 5.3 `TRION/src/mission-control/`
 
 **Purpose:** Ground segment console (P5).
@@ -517,7 +521,7 @@ Add rows for the new designs as planned tests:
 1. **Create `TRION/config/robot_manifest.yaml`** with the K-Bot2 actuator/IMU/power/video schema.
 2. **Create `TRION/sim/w1_panel/`** with scene, assets, and smoke test.
 3. **Create `.github/workflows/trion-ci.yml`** and verify it runs on the current `trion-runtime`.
-4. **Implement `trion-runtime/src/command/authority.rs` and `gate.rs`** as the first Phase 1 P4 modules.
+4. ~~**Implement `trion-runtime/src/command/authority.rs` and `gate.rs`** as the first Phase 1 P4 modules.~~ **Done** for the bounded authority and gate cores; external authentication and queue execution remain.
 5. **Implement `trion-runtime/src/fdir/imu_monitor.rs`** to close F-05.
 6. **Scaffold `TRION/src/trion-policy-service/`** with a design doc and a minimal KOS gRPC client stub.
 

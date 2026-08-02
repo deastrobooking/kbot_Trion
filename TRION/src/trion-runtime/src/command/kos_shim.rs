@@ -1,5 +1,6 @@
 //! Safety boundary in front of an actuator transport (TR-P4-020, F-09).
 
+use crate::command::authority::{CommandClass, CommandDecision};
 use crate::command::gate::{ActuatorCommand, CommandGate, GateOutcome};
 use crate::command::safe_mode::ModeController;
 use crate::telemetry::events::{EventKind, EventLog};
@@ -66,8 +67,17 @@ impl<T: ActuatorTransport> KosSafetyShim<T> {
         }
     }
 
-    pub fn command(&self, commands: Vec<ActuatorCommand>) -> eyre::Result<Vec<GateOutcome>> {
+    pub fn command(
+        &self,
+        authorization: CommandDecision,
+        commands: Vec<ActuatorCommand>,
+    ) -> eyre::Result<Vec<GateOutcome>> {
         let _guard = self.lock_operations();
+        if authorization.class() == CommandClass::Immediate {
+            return Err(eyre::eyre!(
+                "immediate safety authorization cannot forward ordinary actuator motion"
+            ));
+        }
         if self.modes.is_safe() {
             self.events.record(
                 EventKind::CommandRejected,
@@ -99,10 +109,32 @@ impl<T: ActuatorTransport> KosSafetyShim<T> {
             .map(|outcome| outcome.command.clone())
             .collect();
         self.transport.forward(&sanitized)?;
+        self.events.record(
+            EventKind::CommandForwarded,
+            Some(authorization.subject()),
+            format!(
+                "authorized command '{}' forwarded to {} actuators",
+                authorization.command_id(),
+                sanitized.len()
+            ),
+        );
         Ok(outcomes)
     }
 
-    pub fn enter_safe(&self, reason: &str) -> eyre::Result<SafeStateReceipt> {
+    pub fn enter_safe_authorized(
+        &self,
+        authorization: CommandDecision,
+        reason: &str,
+    ) -> eyre::Result<SafeStateReceipt> {
+        if authorization.class() != CommandClass::Immediate {
+            return Err(eyre::eyre!(
+                "safe-state entry requires immediate safety authorization"
+            ));
+        }
+        self.enter_safe(reason)
+    }
+
+    fn enter_safe(&self, reason: &str) -> eyre::Result<SafeStateReceipt> {
         let _guard = self.lock_operations();
         let started = Instant::now();
         self.modes.enter_safe(reason);
@@ -140,6 +172,7 @@ impl<T: ActuatorTransport> SafeStateAction for KosSafetyShim<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::command::authority::{AuthContext, CommandAuthority, CommandRequest, Role};
     use crate::config::RobotManifest;
     use crate::time::RuntimeClock;
     use std::collections::HashMap;
@@ -210,16 +243,61 @@ mod tests {
             Duration::from_millis(100),
         )?;
 
-        let outcome = shim.command(vec![ActuatorCommand {
-            actuator_id: 11,
-            position_deg: Some(200.0),
-            velocity_deg_s: Some(0.0),
-            torque_nm: Some(10.0),
-        }])?;
+        let mut authority = CommandAuthority::new(
+            RuntimeClock::new(),
+            events.clone(),
+            Duration::from_secs(5),
+            4,
+            4,
+        )?;
+        let operator = AuthContext::authenticated("test-operator", Role::Operator)?;
+        let authorization = authority.authorize(
+            &operator,
+            CommandRequest {
+                id: "motion-1".to_owned(),
+                sequence: 1,
+                class: CommandClass::Queued,
+                action: "move actuator 11".to_owned(),
+                approval_token: None,
+            },
+        )?;
+
+        let outcome = shim.command(
+            authorization,
+            vec![ActuatorCommand {
+                actuator_id: 11,
+                position_deg: Some(200.0),
+                velocity_deg_s: Some(0.0),
+                torque_nm: Some(10.0),
+            }],
+        )?;
         assert!(outcome[0].limited);
         assert_eq!(transport.state().forwarded[0].position_deg, Some(180.0));
 
-        let receipt = shim.enter_safe("injected actuator fault")?;
+        let safe_mode_authorization = authority.authorize(
+            &operator,
+            CommandRequest {
+                id: "motion-2".to_owned(),
+                sequence: 2,
+                class: CommandClass::Queued,
+                action: "move actuator 11 again".to_owned(),
+                approval_token: None,
+            },
+        )?;
+
+        let immediate_authorization = authority.authorize(
+            &operator,
+            CommandRequest {
+                id: "safe-mode-1".to_owned(),
+                sequence: 0,
+                class: CommandClass::Immediate,
+                action: "enter safe-mode".to_owned(),
+                approval_token: None,
+            },
+        )?;
+
+        let receipt =
+            shim.enter_safe_authorized(immediate_authorization, "injected actuator fault")?;
         assert_eq!(receipt.actuator_count, 20);
         assert!(receipt.elapsed <= Duration::from_millis(100));
         assert_eq!(transport.state().safe_ids.len(), 20);
@@ -229,12 +307,15 @@ mod tests {
             .values()
             .all(|torque| *torque == 0.0));
         assert!(shim
-            .command(vec![ActuatorCommand {
-                actuator_id: 11,
-                position_deg: Some(0.0),
-                velocity_deg_s: None,
-                torque_nm: None,
-            }])
+            .command(
+                safe_mode_authorization,
+                vec![ActuatorCommand {
+                    actuator_id: 11,
+                    position_deg: Some(0.0),
+                    velocity_deg_s: None,
+                    torque_nm: None,
+                }],
+            )
             .is_err());
         let log = events.to_jsonl();
         assert!(log.contains("SafeStateCommanded"));

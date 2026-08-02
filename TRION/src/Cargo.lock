@@ -309,6 +309,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "trion-skills"
+version = "0.1.0"
+dependencies = [
+ "eyre",
+ "serde",
+ "serde_json",
+ "trion-runtime",
+]
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"

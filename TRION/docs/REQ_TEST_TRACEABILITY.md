@@ -4,7 +4,7 @@
 **Scope:** all TR-P4 requirements ([REQUIREMENTS.md](REQUIREMENTS.md)); safety-related P1–P3 requirements join as those pillars gain requirements.
 **Version:** v0.1 (2026-08-02) — updated with planned tests from [RECOMMENDATIONS_AND_REWRITES.md](RECOMMENDATIONS_AND_REWRITES.md).
 
-Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM-*` = simulation scenario · `T-HW-*` = hardware test. Status: ✅ passing · 🔜 planned.
+Test ID conventions: `RT-*` = Rust test implemented in the Trion Rust workspace · `T-SIM-*` = simulation scenario · `T-HW-*` = hardware test. Status: ✅ passing · 🔜 planned.
 
 ## Matrix
 
@@ -22,7 +22,7 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | TR-P4-020 | T-SIM-01 / T-HW-01 | Timed safe-mode on injected actuator overcurrent, incl. zero-torque path | Sim + HW | Entry ≤ 100 ms of decision; no joint exceeds limits | 🔜 |
 | TR-P4-021 | RT-05 | Explicit-recovery-only verified | Integration | No auto-exit; audited operator exit works | ✅ |
 | TR-P4-022 | — | Dependency audit: `trion-runtime` has no perception/network deps | Review/CI | `cargo tree` contains no such crates; architecture review at phase gates | ✅ (manual) / 🔜 (CI check) |
-| TR-P4-030 | RT-02 | Bounded event log + JSONL export | Unit | Capacity enforced; valid JSONL | ✅ |
+| TR-P4-030 | RT-02, RT-11 | Bounded event log + plan/gate/skill lifecycle events | Unit | Capacity enforced; valid JSONL; supervised plan lifecycle is recorded | ✅ |
 | TR-P4-031 | T-SIM-07 | Tamper-evident log verification | Sim/ground | Hash chain detects modification | 🔜 |
 | TR-P4-040 | T-SIM-08 | Latency-injection teleop test (200 ms and 2 s) | Sim | Task-level operation correct at 2 s one-way | 🔜 |
 | TR-P4-041 | T-SIM-09 | Degraded comms modes | Sim | Telemetry-only + store-and-forward transitions logged | 🔜 |
@@ -31,15 +31,17 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | TR-P4-050 | T-SIM-11 | Command auth: role classes, two-step arming, replay rejection | Sim/ground | Unauthorized + unarmed hazardous commands rejected and logged | 🔜 |
 | TR-P4-060 | T-HW-05 | WCET measurement of control path + frame-overrun policy | Hardware | Measured WCET documented; N overruns → safe-mode | 🔜 |
 | TR-P4-070 | CI | clippy + fmt + test + demo gate | CI | Zero violations on PR | ✅ |
-| TR-P4-042 | RT-06 | `command::authority` rejects unauthorized commit-window command | Unit | Unauthorized / unarmed hazardous command rejected and logged | 🔜 |
+| TR-P4-042 | RT-06 | `command::authority` class and commit-window tests | Unit | Authenticated immediate safety path remains available; queued role checks enforced; unarmed, expired, mismatched, or consumed approvals rejected and logged | ✅ |
+| TR-P4-042 | RT-11 | `trion-skills::executor` precondition, timeout, gate, abort, capacity, and multi-step tests | Unit | Invalid plans are rejected; failed preconditions block start; timeouts and abort facts stop execution; exact authenticated gate approval is required; plan and registries remain bounded | ✅ (executor core) / 🔜 (MuJoCo coupling) |
 | F-09 | RT-07 | `command::gate` clips out-of-limit actuator command and rejects commands in safe-mode | Unit | Position/velocity/torque clamped to manifest limits; unknown/non-finite commands rejected; safe-mode blocks ordinary commands | ✅ (gate) / 🔜 (violation escalation) |
-| TR-P4-050 | RT-06 | (same — role-based auth) | Unit | Role check blocks privileged command | 🔜 |
+| TR-P4-050 | RT-06 | Role, anti-replay, capacity, and two-step approval tests | Unit | Unauthenticated and underprivileged commands rejected; queued/commit replay rejected; authority state bounded | ✅ (authority) / 🔜 (credential adapter + security review) |
 | F-05 (IMU stale) | RT-08 | `fdir::imu_monitor` detects stale IMU and emits event | Unit | Missing samples for > threshold → FaultDetected + health Critical | 🔜 |
 | P1 (E-stop) | T-SIM-13 | E-stop stops motion within 100 ms in sim | Sim | Safe-mode entered; zero-torque issued within bound | 🔜 |
 | P1 (E-stop) | T-HW-03 | E-stop during motion | Hardware | Immediate halt regardless of command source; no rebound | 🔜 |
 | P2 (policy service) | T-SIM-12 | `trion-policy-service` runs worksite W1 dry-run | Sim | ONNX inference loop executes without direct hardware deps | 🔜 |
 | P2 (robot manifest) | RT-09 | Robot manifest validation rejects duplicate IDs and invalid limits | Unit | Startup validation fails with descriptive error; unreviewed manifest refuses hardware approval | ✅ |
 | Phase 0 digital twin | T-SIM-14 | `compose_w1_kbot.py` loads pinned K-Bot + W1 | Sim | Named robot, fixture targets, 20 actuators, and finite state after 100 steps | ✅ |
+| P3 (skill preconditions) | RT-11 | Skill invoked with failed precondition (e.g., poor localization) | Unit | Skill runner is not started; wait state identifies missing facts; deadline abort is recorded | ✅ |
 | P3 (skill preconditions) | T-SIM-06 | Skill invoked with failed precondition (e.g., poor localization) | Sim | Skill refuses to start; operator notified | 🔜 |
 
 ## Coverage targets

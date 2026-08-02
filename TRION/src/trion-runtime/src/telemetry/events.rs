@@ -17,7 +17,18 @@ pub enum EventKind {
     SafeModeExited,
     CommandLimited,
     CommandRejected,
+    CommandArmed,
+    CommandAuthorized,
+    CommandForwarded,
     SafeStateCommanded,
+    PlanStarted,
+    PlanCompleted,
+    PlanAborted,
+    SkillStarted,
+    SkillCompleted,
+    SkillFailed,
+    HumanGateRequested,
+    HumanGateApproved,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

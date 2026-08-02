@@ -7,9 +7,9 @@ The Cargo workspace for all Trion on-robot and ground-segment code. One crate pe
 | Crate | Status | Pillar | Purpose |
 | --- | --- | --- | --- |
 | [`trion-runtime`](trion-runtime/) | ✅ active | P4 | Safety-critical supervision: health telemetry, watchdogs, FDIR escalation, safe-mode. **Must never depend on perception/network/mission-control code (TR-P4-022).** |
-| `trion-skills` | planned (Phase 1) | P1/P3 | Skill library (grasp, insert, torque, inspect) + autonomy-ladder wrapper; ONNX policies via the inference path |
+| [`trion-skills`](trion-skills/) | 🟡 Phase 2 foundation | P1/P3 | Bounded task-plan executor, autonomy ceilings, human gates, and initial inspect/handle/connector execution envelopes; motion runners remain open |
 | `trion-perception` | planned (Phase 2) | P2 | Localization, fixture recognition, worksite mapping — non-safety-critical tier |
-| `mission-control` | planned (Phase 1) | P5 | Ground console: plan executor, telemetry dashboards, command classes/auth client |
+| `mission-control` | planned (Phase 1) | P5 | Ground console: plan upload/review, telemetry dashboards, command classes/auth client |
 
 Simulation assets and composition checks live outside this workspace in `TRION/sim/`; closed-loop fault injection is the next integration step.
 
@@ -27,7 +27,8 @@ trion-runtime/src/
 ├── fdir/           # detect→isolate→recover→escalate; one file per monitor
 │   ├── watchdog.rs         (F-01)
 │   └── supervisor.rs
-├── command/        # safe-mode, manifest gate, transport safety shim
+├── command/        # authority, safe-mode, manifest gate, transport shim
+│   ├── authority.rs
 │   ├── gate.rs
 │   ├── kos_shim.rs
 │   └── safe_mode.rs
@@ -51,3 +52,5 @@ cargo test                         # requirement-traced tests
 cargo clippy --all-targets         # lint gate
 cargo run --bin walking_skeleton   # Phase 0 FDIR demo
 ```
+
+The canonical Phase 2 plan format is documented in [`TASK_PLAN_FORMAT.md`](../docs/TASK_PLAN_FORMAT.md), with a checked-in W1 example under [`TRION/plans`](../plans/).

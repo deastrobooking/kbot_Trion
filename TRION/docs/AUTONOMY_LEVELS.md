@@ -15,6 +15,10 @@ Formalization of the GITAI-style autonomy ladder, extended with field-robot leve
 
 Phase focus: L0–L3 are the Phase 1–2 targets; L4 is the Phase 3 target; L5 is Phase 4+ and only ever inside the reviewed safety envelope.
 
+## Implementation status
+
+The Phase 2 executor now enforces registered autonomy ceilings during whole-plan validation and requires an authenticated Operator or Supervisor at every L3 gate. The initial code-level ceilings are deliberately conservative: `inspect_fixture` and `actuate_handle` are L2, and `mate_connector` is L1. These are execution envelopes, not promotion claims; motion implementations and the evidence campaigns below remain open. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md).
+
 ## Promotion criteria
 
 A skill is promoted from level N to N+1 only when **all** of the following are recorded:
@@ -70,7 +74,7 @@ trion-skills/<skill>/EVIDENCE.md
 
 Per attempt, log: success/failure, force/torque profiles, FDIR events, and human interventions with reasons — this data justifies promotions, improves policies (L4/L5), and populates post-mission reports.
 
-The mission-control plan executor enforces levels at runtime: a plan step requesting a skill above its recorded level is rejected at plan-validation time, not at execution time.
+The `trion-skills` executor enforces levels at runtime: a plan step requesting a skill above its recorded level is rejected at plan-validation time, not at execution time. Mission control will own upload and operator presentation once that crate is implemented.
 
 ## Relationship to operations
 

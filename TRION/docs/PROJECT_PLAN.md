@@ -12,6 +12,7 @@
 - [FDIR_MATRIX.md](FDIR_MATRIX.md) — fault detection/isolation/recovery matrix
 - [REQ_TEST_TRACEABILITY.md](REQ_TEST_TRACEABILITY.md) — requirements-to-test matrix with coverage targets
 - [AUTONOMY_LEVELS.md](AUTONOMY_LEVELS.md) — formal L0–L5 autonomy ladder, skill spec template, promotion criteria
+- [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md) — canonical JSON task-plan schema and executor lifecycle
 - [WORKSITES_AND_TASKS.md](WORKSITES_AND_TASKS.md) — canonical worksites and task set
 - [NEXT_STEPS_AUDIT.md](NEXT_STEPS_AUDIT.md) — project-state audit and Phase 0 close-out gaps
 - [UPSTREAM_KBOT_AUDIT.md](UPSTREAM_KBOT_AUDIT.md) — upstream code review and improvement opportunities
@@ -94,7 +95,7 @@ This is what separates a demo from a *mission-critical* system. Requirements are
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  TRION/src/mission-control   (P5)  — ground console, plans   │
-│  web UI + gRPC client to KOS; plan executor; telemetry dash  │
+│  web UI + gRPC client to KOS; plan upload; telemetry dash    │
 └──────────────────────────────┬───────────────────────────────┘
                         gRPC (KOS services)
 ┌──────────────────────────────▼───────────────────────────────┐
@@ -122,7 +123,7 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 
 ## 4. Phased roadmap
 
-### Phase 0 — Foundations (now)
+### Phase 0 — Foundations (integration closure remains open)
 - [ ] Stand up dev environment: native Rust gates and CI are green and pinned K-Bot composes with W1; cross-compile verification remains open.
 - [x] `TRION/src/trion-runtime` crate: health-telemetry bus + heartbeat watchdog + FDIR escalation + safe-mode (walking skeleton of P4; requirement-traced tests + demo).
 - [x] **Preliminary Hazard Analysis (PHA) v0 and safety case skeleton** ([PHA.md](PHA.md)) feeding the FDIR matrix.
@@ -140,16 +141,16 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 - [ ] Trion policy service (`TRION/src/trion-policy-service/`): ONNX inference via KOS gRPC, commands routed through the safety shim.
   - Acceptance: `run_model` equivalent executes in `TRION/sim/w1_panel` without direct hardware dependencies.
 - [ ] Robot configuration manifest (`TRION/config/robot_manifest.yaml`): validated simulation manifest and runtime loader are implemented; hardware review plus policy-service/Python consumers remain open.
-- [ ] Command authority layer (`TRION/src/trion-runtime/src/command/`): immediate / queued / commit-window command classes + two-step arming.
+- [x] Command authority core (`TRION/src/trion-runtime/src/command/authority.rs`): immediate / queued / commit-window classes, role checks, bounded monotonic anti-replay state, and expiring one-shot two-step approvals. The Phase 2 task executor now supplies bounded queued-plan semantics; external credential verification and actuator-command coupling remain open.
 - [x] Actuator command sanity gate (`TRION/src/trion-runtime/src/command/gate.rs`): independent joint-limit, velocity, and torque enforcement plus safe-mode rejection; KOS forwarding integration is tracked in the safety shim item.
 - [ ] Session recording/replay (`krec`) wired into every run; telemetry + event schemas implemented.
 - [ ] Shared-control grasp: operator designates target, robot executes force-limited grasp.
 - [ ] First two skills on real hardware at L0–L1: *inspect fixture* (T-01) and *actuate handle* (T-02).
 - **Exit criteria:** a remote operator completes an inspect-and-actuate task end-to-end with recorded telemetry and an auto-generated post-mission report; safe-mode is demonstrable from sim and hardware.
 
-### Phase 2 — Supervised autonomy (Dextre/Astrobee level)
-- [ ] Task-plan format + executor with preconditions, abort conditions, human go/no-go gates.
-- [ ] Trion skill crate (`TRION/src/trion-skills/`): skill library + autonomy-ladder wrapper (L0–L4) for inspection, handle actuation, and connector mate.
+### Phase 2 — Supervised autonomy (active foundation; Dextre/Astrobee level)
+- [x] Task-plan format + bounded deterministic executor with preconditions, abort conditions, timeouts, autonomy ceilings, structured events, and authenticated human go/no-go gates ([TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md)). Mission-control upload, durable plan state, commit-window coupling, and sim execution remain integration work.
+- [ ] Trion skill crate (`TRION/src/trion-skills/`): crate and execution envelopes are implemented for inspection (L2 ceiling), handle actuation (L2), and connector mate (L1); motion runners, force envelopes, and promotion evidence remain open.
 - [ ] Trion perception crate (`TRION/src/trion-perception/`): vision localization against the mapped worksite; fixture recognition for the skill library.
 - [ ] Sim-gating pipeline: plans must pass fault-injected sim runs before hardware execution.
 - [ ] FDIR v1: full detect/isolate/recover matrix (F-02…F-08), safe-mode entry demonstrated from every fault class.

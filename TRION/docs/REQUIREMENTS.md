@@ -33,7 +33,7 @@ Status legend: ✅ implemented in `trion-runtime` v0 skeleton · 🔜 planned.
 
 | ID | Requirement | Verification | Status |
 | --- | --- | --- | --- |
-| TR-P4-030 | The runtime SHALL keep a structured event log (mode changes, fault detections, recovery attempts/results, safe-mode entry/exit, human gates, skill start/stop) with bounded memory and JSONL export; events are the source for post-mission reports. | Unit test + report generator | ✅ (log) / 🔜 (reports) |
+| TR-P4-030 | The runtime SHALL keep a structured event log (mode changes, fault detections, recovery attempts/results, safe-mode entry/exit, human gates, skill start/stop) with bounded memory and JSONL export; events are the source for post-mission reports. | Unit test + report generator | ✅ (bounded log + plan/gate/skill events) / 🔜 (reports) |
 | TR-P4-031 | Mission logs SHALL be tamper-evident (append-only storage with integrity hashes) in the ground segment. | Design review + test | 🔜 |
 
 ## Comms & command model
@@ -42,14 +42,14 @@ Status legend: ✅ implemented in `trion-runtime` v0 skeleton · 🔜 planned.
 | --- | --- | --- | --- |
 | TR-P4-040 | Latency budgets: teleop video+state ≤ 200 ms one-way on the local analog link; all task-level operation SHALL remain correct at up to 2 s one-way latency (design-for-delay). | Latency injection test | 🔜 |
 | TR-P4-041 | Degraded comms modes SHALL exist: low-bandwidth telemetry-only downlink, and store-and-forward command uplink; mode transitions are logged events. | Sim + link-shaping test | 🔜 |
-| TR-P4-042 | Commands SHALL be classed: (a) **immediate** (e-stop, safe-mode — always accepted, minimal path), (b) **queued** task steps with preconditions and timeouts, (c) **commit-window** contact actions (operator approves; robot must begin execution within a bounded window or the approval expires). | Unit + integration tests | 🔜 |
+| TR-P4-042 | Commands SHALL be classed: (a) **immediate** (e-stop, safe-mode — always accepted, minimal path), (b) **queued** task steps with preconditions and timeouts, (c) **commit-window** contact actions (operator approves; robot must begin execution within a bounded window or the approval expires). | Unit + integration tests | ✅ authority + queued executor core / 🔜 end-to-end sim coupling |
 | TR-P4-043 | Loss of ground comms SHALL NOT cause unsafe behavior: the robot completes the current queued step to its next gate, then holds; after a configured timeout it enters safe hold. Links: F-07. | Sim fault injection | 🔜 |
 
 ## Command authority & security
 
 | ID | Requirement | Verification | Status |
 | --- | --- | --- | --- |
-| TR-P4-050 | All commands SHALL be authenticated; command classes are role-based (observer / operator / supervisor); hazardous commands (motion in contact, power cycling, safe-mode exit) require two-step arming. Links: H-08. | Security review + tests | 🔜 |
+| TR-P4-050 | All commands SHALL be authenticated; command classes are role-based (observer / operator / supervisor); hazardous commands (motion in contact, power cycling, safe-mode exit) require two-step arming. Links: H-08. | Security review + tests | ✅ bounded authority core / 🔜 credential adapter + security review |
 
 ## Control loop determinism
 

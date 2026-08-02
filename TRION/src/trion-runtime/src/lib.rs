@@ -8,7 +8,7 @@
 //! | [`time`]     | Single monotonic time base                       | TR-P4-002    |
 //! | [`telemetry`]| Health bus + structured event log                | TR-P4-001..003, TR-P4-030 |
 //! | [`fdir`]     | Watchdog + escalation supervisor                 | TR-P4-010..013 |
-//! | [`command`]  | Safe-mode, command gate, actuator transport shim | TR-P4-020..021, F-09 (042, 050 future) |
+//! | [`command`]  | Authority, safe-mode, gate, actuator transport shim | TR-P4-020..021, 042, 050, F-09 |
 //!
 //! Safety/control separation (TR-P4-022): this crate must never depend on
 //! perception, network, or mission-control code.
@@ -19,6 +19,9 @@ pub mod fdir;
 pub mod telemetry;
 pub mod time;
 
+pub use command::authority::{
+    AuthContext, CommandAuthority, CommandClass, CommandDecision, CommandRequest, Role,
+};
 pub use command::gate::{ActuatorCommand, CommandGate, GateOutcome};
 pub use command::kos_shim::{ActuatorTransport, KosSafetyShim, SafeStateAction, SafeStateReceipt};
 pub use command::safe_mode::{ModeController, RunMode};

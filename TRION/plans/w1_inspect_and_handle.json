@@ -1,0 +1,37 @@
+{
+  "id": "w1-inspect-and-handle-v1",
+  "steps": [
+    {
+      "id": "inspect-panel",
+      "skill": "inspect_fixture",
+      "requested_level": "L2",
+      "timeout_ms": 30000,
+      "preconditions": [
+        { "key": "perception_nominal", "expected": true },
+        { "key": "localization_valid", "expected": true }
+      ],
+      "abort_conditions": [
+        { "key": "active_fault", "expected": true }
+      ],
+      "human_gate": null
+    },
+    {
+      "id": "actuate-handle",
+      "skill": "actuate_handle",
+      "requested_level": "L2",
+      "timeout_ms": 45000,
+      "preconditions": [
+        { "key": "handle_localized", "expected": true },
+        { "key": "arm_health_nominal", "expected": true }
+      ],
+      "abort_conditions": [
+        { "key": "active_fault", "expected": true },
+        { "key": "force_limit_exceeded", "expected": true }
+      ],
+      "human_gate": {
+        "id": "approve-handle-motion",
+        "prompt": "Approve the localized handle trajectory before actuation."
+      }
+    }
+  ]
+}
