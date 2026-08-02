@@ -1,0 +1,14 @@
+[package]
+name = "trion-runtime"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Mission-critical runtime supervision for the Trion space operations engineer: health telemetry, heartbeat watchdogs, FDIR escalation, safe-mode"
+
+[dependencies]
+eyre = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
