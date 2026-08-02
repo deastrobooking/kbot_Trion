@@ -13,6 +13,9 @@
 - [REQ_TEST_TRACEABILITY.md](REQ_TEST_TRACEABILITY.md) — requirements-to-test matrix with coverage targets
 - [AUTONOMY_LEVELS.md](AUTONOMY_LEVELS.md) — formal L0–L5 autonomy ladder, skill spec template, promotion criteria
 - [WORKSITES_AND_TASKS.md](WORKSITES_AND_TASKS.md) — canonical worksites and task set
+- [NEXT_STEPS_AUDIT.md](NEXT_STEPS_AUDIT.md) — project-state audit and Phase 0 close-out gaps
+- [UPSTREAM_KBOT_AUDIT.md](UPSTREAM_KBOT_AUDIT.md) — upstream code review and improvement opportunities
+- [RECOMMENDATIONS_AND_REWRITES.md](RECOMMENDATIONS_AND_REWRITES.md) — consolidated improvement plan and key Rust rewrite designs
 
 ---
 
@@ -132,16 +135,24 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 
 ### Phase 1 — Teleop mechanic (Robonaut baseline)
 - [ ] Mission-control console v0: video + state + joint/Cartesian teleop + e-stop over gRPC (human-factors pass on the UI).
+- [ ] Trion KOS safety shim (`TRION/src/trion-runtime/src/kos_shim/`): wrap `kos-kbot` services with E-stop, safe-mode, and actuator command gating.
+  - Acceptance: a safe-mode command stops all actuator motion within 100 ms in sim.
+- [ ] Trion policy service (`TRION/src/trion-policy-service/`): ONNX inference via KOS gRPC, commands routed through the safety shim.
+  - Acceptance: `run_model` equivalent executes in `TRION/sim/w1_panel` without direct hardware dependencies.
+- [ ] Robot configuration manifest (`TRION/config/robot_manifest.yaml`) consumed by `trion-runtime`, `trion-policy-service`, and a Python generator for `ksim-kbot/deploy`.
+- [ ] Command authority layer (`TRION/src/trion-runtime/src/command/`): immediate / queued / commit-window command classes + two-step arming.
+- [ ] Actuator command sanity gate (`TRION/src/trion-runtime/src/command/gate.rs`): independent joint-limit, velocity, and torque enforcement before KOS.
 - [ ] Session recording/replay (`krec`) wired into every run; telemetry + event schemas implemented.
 - [ ] Shared-control grasp: operator designates target, robot executes force-limited grasp.
 - [ ] First two skills on real hardware at L0–L1: *inspect fixture* (T-01) and *actuate handle* (T-02).
-- **Exit criteria:** a remote operator completes an inspect-and-actuate task end-to-end with recorded telemetry and an auto-generated post-mission report.
+- **Exit criteria:** a remote operator completes an inspect-and-actuate task end-to-end with recorded telemetry and an auto-generated post-mission report; safe-mode is demonstrable from sim and hardware.
 
 ### Phase 2 — Supervised autonomy (Dextre/Astrobee level)
-- [ ] Task-plan format + executor with preconditions, abort conditions, human go/no-go gates, and the three command classes (immediate / queued / commit-window).
-- [ ] Vision localization against the mapped worksite; fixture recognition for the skill library.
+- [ ] Task-plan format + executor with preconditions, abort conditions, human go/no-go gates.
+- [ ] Trion skill crate (`TRION/src/trion-skills/`): skill library + autonomy-ladder wrapper (L0–L4) for inspection, handle actuation, and connector mate.
+- [ ] Trion perception crate (`TRION/src/trion-perception/`): vision localization against the mapped worksite; fixture recognition for the skill library.
 - [ ] Sim-gating pipeline: plans must pass fault-injected sim runs before hardware execution.
-- [ ] FDIR v1: full detect/isolate/recover matrix, safe-mode entry demonstrated from every fault class.
+- [ ] FDIR v1: full detect/isolate/recover matrix (F-02…F-08), safe-mode entry demonstrated from every fault class.
 - [ ] **Requirements-to-test traceability matrix v1**; initial coverage targets measured and reported.
 - **Exit criteria:** operator uploads a multi-step maintenance plan; robot executes with one human gate; injected fault mid-task → clean safe-mode → resume.
 

@@ -1,8 +1,8 @@
-# Requirements-to-Test Traceability Matrix — v0
+# Requirements-to-Test Traceability Matrix — v0.1
 
 **Purpose:** every safety-critical and mission-critical requirement is verified by one or more tests (sim and/or hardware).
 **Scope:** all TR-P4 requirements ([REQUIREMENTS.md](REQUIREMENTS.md)); safety-related P1–P3 requirements join as those pillars gain requirements.
-**Version:** v0 (2026-08-02)
+**Version:** v0.1 (2026-08-02) — updated with planned tests from [RECOMMENDATIONS_AND_REWRITES.md](RECOMMENDATIONS_AND_REWRITES.md).
 
 Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM-*` = simulation scenario · `T-HW-*` = hardware test. Status: ✅ passing · 🔜 planned.
 
@@ -30,8 +30,15 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | TR-P4-043 | T-SIM-05 | Comms loss during contact (H-10) | Sim | Halt within bound; hold to gate; safe hold after timeout; no unsafe motion | 🔜 |
 | TR-P4-050 | T-SIM-11 | Command auth: role classes, two-step arming, replay rejection | Sim/ground | Unauthorized + unarmed hazardous commands rejected and logged | 🔜 |
 | TR-P4-060 | T-HW-05 | WCET measurement of control path + frame-overrun policy | Hardware | Measured WCET documented; N overruns → safe-mode | 🔜 |
-| TR-P4-070 | CI | clippy + fmt + no-unwrap lint gate | CI | Zero violations on PR | 🔜 (CI pending; manually clean today) |
+| TR-P4-070 | CI | clippy + fmt + no-unwrap lint gate | CI | Zero violations on PR | ✅ |
+| TR-P4-042 | RT-06 | `command::authority` rejects unauthorized commit-window command | Unit | Unauthorized / unarmed hazardous command rejected and logged | 🔜 |
+| TR-P4-042 | RT-07 | `command::gate` clips out-of-limit actuator command | Unit | Position/velocity/torque clamped to manifest limits | 🔜 |
+| TR-P4-050 | RT-06 | (same — role-based auth) | Unit | Role check blocks privileged command | 🔜 |
+| F-05 (IMU stale) | RT-08 | `fdir::imu_monitor` detects stale IMU and emits event | Unit | Missing samples for > threshold → FaultDetected + health Critical | 🔜 |
+| P1 (E-stop) | T-SIM-13 | E-stop stops motion within 100 ms in sim | Sim | Safe-mode entered; zero-torque issued within bound | 🔜 |
 | P1 (E-stop) | T-HW-03 | E-stop during motion | Hardware | Immediate halt regardless of command source; no rebound | 🔜 |
+| P2 (policy service) | T-SIM-12 | `trion-policy-service` runs worksite W1 dry-run | Sim | ONNX inference loop executes without direct hardware deps | 🔜 |
+| P2 (robot manifest) | RT-09 | Robot manifest validation rejects duplicate IDs / bus conflicts | Unit | Startup validation fails with descriptive error | 🔜 |
 | P3 (skill preconditions) | T-SIM-06 | Skill invoked with failed precondition (e.g., poor localization) | Sim | Skill refuses to start; operator notified | 🔜 |
 
 ## Coverage targets
