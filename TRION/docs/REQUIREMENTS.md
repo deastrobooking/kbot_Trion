@@ -1,6 +1,6 @@
 # Trion P4 Requirements — v0
 
-Numbered requirements for the mission-critical runtime pillar (P4 in [PROJECT_PLAN.md](PROJECT_PLAN.md)). Every requirement carries a verification method; the traceability matrix (Phase 2) will link each to its verifying tests. Hazard links refer to [PHA.md](PHA.md); fault links refer to [FDIR_MATRIX.md](FDIR_MATRIX.md).
+Numbered requirements for the mission-critical runtime pillar (P4 in [PROJECT_PLAN.md](PROJECT_PLAN.md)). Every requirement carries a verification method; [REQ_TEST_TRACEABILITY.md](REQ_TEST_TRACEABILITY.md) links each to its verifying tests. Hazard links refer to [PHA.md](PHA.md); fault links refer to [FDIR_MATRIX.md](FDIR_MATRIX.md); the safety argument lives in [SAFETY_CASE.md](SAFETY_CASE.md).
 
 Status legend: ✅ implemented in `trion-runtime` v0 skeleton · 🔜 planned.
 

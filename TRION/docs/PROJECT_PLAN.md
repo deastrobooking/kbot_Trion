@@ -7,9 +7,11 @@
 **Companion artifacts** (this plan is the index; the details live in):
 
 - [REQUIREMENTS.md](REQUIREMENTS.md) — numbered P4 requirements with verification methods
-- [PHA.md](PHA.md) — preliminary hazard analysis + safety case skeleton
+- [PHA.md](PHA.md) — preliminary hazard analysis (system boundaries, RAC-ranked hazard worksheet)
+- [SAFETY_CASE.md](SAFETY_CASE.md) — safety goals, argument structure, claims-to-evidence mapping
 - [FDIR_MATRIX.md](FDIR_MATRIX.md) — fault detection/isolation/recovery matrix
-- [AUTONOMY_LEVELS.md](AUTONOMY_LEVELS.md) — formal L0–L4 autonomy ladder and skill promotion criteria
+- [REQ_TEST_TRACEABILITY.md](REQ_TEST_TRACEABILITY.md) — requirements-to-test matrix with coverage targets
+- [AUTONOMY_LEVELS.md](AUTONOMY_LEVELS.md) — formal L0–L5 autonomy ladder, skill spec template, promotion criteria
 - [WORKSITES_AND_TASKS.md](WORKSITES_AND_TASKS.md) — canonical worksites and task set
 
 ---
