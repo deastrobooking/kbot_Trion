@@ -25,7 +25,8 @@ pub struct HeartbeatHandle {
 
 impl HeartbeatHandle {
     pub fn beat(&self) {
-        self.last_beat_ms.store(self.clock.now_ms(), Ordering::Relaxed);
+        self.last_beat_ms
+            .store(self.clock.now_ms(), Ordering::Relaxed);
     }
 }
 
@@ -74,7 +75,11 @@ impl Watchdog {
 
     /// Monitor loop. Each fault is reported once per outage; a service that
     /// beats again re-arms its detection. Runs until `shutdown` flips true.
-    pub async fn run(mut self, faults: mpsc::Sender<ServiceDown>, mut shutdown: watch::Receiver<bool>) {
+    pub async fn run(
+        mut self,
+        faults: mpsc::Sender<ServiceDown>,
+        mut shutdown: watch::Receiver<bool>,
+    ) {
         let mut ticker = tokio::time::interval(self.tick);
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {

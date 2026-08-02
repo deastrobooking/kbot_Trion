@@ -38,7 +38,10 @@ async fn missed_heartbeat_detected_within_bound() -> eyre::Result<()> {
         .await?
         .ok_or_else(|| eyre::eyre!("fault channel closed before detection"))?;
     assert_eq!(fault.service, "svc");
-    assert!(fault.silent_for_ms > 60, "silence must exceed miss_limit × interval");
+    assert!(
+        fault.silent_for_ms > 60,
+        "silence must exceed miss_limit × interval"
+    );
     Ok(())
 }
 
@@ -120,6 +123,9 @@ async fn repeated_faults_escalate_to_safe_mode_and_recovery_is_explicit() -> eyr
 
     let log = events.to_jsonl();
     assert!(log.contains("SafeModeEntered"), "event log must show entry");
-    assert!(log.contains("SafeModeExited"), "event log must show audited exit");
+    assert!(
+        log.contains("SafeModeExited"),
+        "event log must show audited exit"
+    );
     Ok(())
 }

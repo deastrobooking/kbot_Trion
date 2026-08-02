@@ -1,10 +1,10 @@
 //! FDIR escalation supervisor (TR-P4-012, FDIR entry F-01): one bounded
 //! recovery path per fault, then safe-mode. No infinite retry loops.
 
-use crate::time::{duration_ms, RuntimeClock};
-use crate::telemetry::events::{EventKind, EventLog};
 use crate::command::safe_mode::ModeController;
 use crate::fdir::watchdog::ServiceDown;
+use crate::telemetry::events::{EventKind, EventLog};
+use crate::time::{duration_ms, RuntimeClock};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::{mpsc, watch};
@@ -51,7 +51,11 @@ impl<C: ServiceController> Supervisor<C> {
         }
     }
 
-    pub async fn run(mut self, mut faults: mpsc::Receiver<ServiceDown>, mut shutdown: watch::Receiver<bool>) {
+    pub async fn run(
+        mut self,
+        mut faults: mpsc::Receiver<ServiceDown>,
+        mut shutdown: watch::Receiver<bool>,
+    ) {
         loop {
             tokio::select! {
                 fault = faults.recv() => {
@@ -80,7 +84,10 @@ impl<C: ServiceController> Supervisor<C> {
 
         let now = self.clock.now_ms();
         let window_ms = duration_ms(self.policy.window);
-        let history = self.restart_history.entry(fault.service.clone()).or_default();
+        let history = self
+            .restart_history
+            .entry(fault.service.clone())
+            .or_default();
         history.retain(|stamp| now.saturating_sub(*stamp) <= window_ms);
 
         let restarts_in_window = u32::try_from(history.len()).unwrap_or(u32::MAX);

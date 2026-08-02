@@ -15,7 +15,12 @@ use trion_runtime::{
 
 /// A simulated KOS service: beats its heartbeat and publishes health until an
 /// optional simulated crash time.
-fn spawn_service(name: String, handle: HeartbeatHandle, bus: HealthBus, lifetime: Option<Duration>) {
+fn spawn_service(
+    name: String,
+    handle: HeartbeatHandle,
+    bus: HealthBus,
+    lifetime: Option<Duration>,
+) {
     tokio::spawn(async move {
         let started = tokio::time::Instant::now();
         let mut ticker = tokio::time::interval(Duration::from_millis(50));
@@ -23,7 +28,11 @@ fn spawn_service(name: String, handle: HeartbeatHandle, bus: HealthBus, lifetime
             ticker.tick().await;
             if let Some(lifetime) = lifetime {
                 if started.elapsed() >= lifetime {
-                    bus.publish(&name, HealthLevel::Critical, Some("simulated crash".to_owned()));
+                    bus.publish(
+                        &name,
+                        HealthLevel::Critical,
+                        Some("simulated crash".to_owned()),
+                    );
                     return;
                 }
             }
@@ -48,7 +57,12 @@ impl ServiceController for DemoController {
             .get(service)
             .ok_or_else(|| eyre::eyre!("unknown service '{service}'"))?;
         handle.beat();
-        spawn_service(service.to_owned(), handle.clone(), self.bus.clone(), *lifetime);
+        spawn_service(
+            service.to_owned(),
+            handle.clone(),
+            self.bus.clone(),
+            *lifetime,
+        );
         Ok(())
     }
 }
@@ -74,7 +88,12 @@ async fn main() -> Result<()> {
 
     // Initial spawns: imu-svc crashes at t=2 s (its restart is healthy);
     // actuator-svc crashes at t=4 s and every restart dies again after 300 ms.
-    spawn_service("imu-svc".to_owned(), imu.clone(), bus.clone(), Some(Duration::from_secs(2)));
+    spawn_service(
+        "imu-svc".to_owned(),
+        imu.clone(),
+        bus.clone(),
+        Some(Duration::from_secs(2)),
+    );
     spawn_service(
         "actuator-svc".to_owned(),
         actuator.clone(),
@@ -155,6 +174,9 @@ async fn main() -> Result<()> {
 
     println!("\n=== structured event log (JSONL, TR-P4-030) ===");
     println!("{}", events.to_jsonl());
-    println!("\nhealth reports dropped without a subscriber (TR-P4-003): {}", bus.dropped_count());
+    println!(
+        "\nhealth reports dropped without a subscriber (TR-P4-003): {}",
+        bus.dropped_count()
+    );
     Ok(())
 }

@@ -1,0 +1,85 @@
+<mujoco model="trion_worksite_w1">
+  <!-- Worksite W1 (WORKSITES_AND_TASKS.md): exterior panel mockup with a
+       handle (task T-02), latch, and electrical connector (task T-03).
+       The K-Bot model is composed in separately (see README.md); this file
+       defines only the worksite so scenes stay modular. -->
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <visual>
+    <headlight ambient="0.4 0.4 0.4" diffuse="0.6 0.6 0.6"/>
+  </visual>
+
+  <asset>
+    <material name="floor_mat" rgba="0.30 0.30 0.32 1"/>
+    <material name="panel_mat" rgba="0.72 0.75 0.78 1"/>
+    <material name="handle_mat" rgba="0.85 0.55 0.10 1"/>
+    <material name="latch_mat" rgba="0.20 0.45 0.80 1"/>
+    <material name="socket_mat" rgba="0.15 0.15 0.17 1"/>
+    <material name="plug_mat" rgba="0.80 0.20 0.20 1"/>
+    <material name="tray_mat" rgba="0.45 0.48 0.50 1"/>
+  </asset>
+
+  <worldbody>
+    <light directional="true" pos="0 0 3" dir="0 0 -1"/>
+    <geom name="floor" type="plane" size="5 5 0.1" material="floor_mat"/>
+
+    <!-- Vertical panel face at robot working height, facing -x -->
+    <body name="panel" pos="0.60 0 1.00">
+      <geom name="panel_face" type="box" size="0.02 0.45 0.35" material="panel_mat"/>
+      <!-- support legs down to the floor -->
+      <geom name="panel_leg_l" type="box" size="0.02 0.03 0.50" pos="0 -0.40 -0.50" material="panel_mat"/>
+      <geom name="panel_leg_r" type="box" size="0.02 0.03 0.50" pos="0 0.40 -0.50" material="panel_mat"/>
+
+      <!-- T-02 target: hinged handle (pull down 0→90°), sprung lightly closed -->
+      <body name="handle" pos="-0.05 -0.20 0.15">
+        <joint name="handle_hinge" type="hinge" axis="0 1 0" range="0 1.5708"
+               damping="0.5" springref="0" stiffness="0.3"/>
+        <geom name="handle_lever" type="capsule" fromto="0 0 0  -0.12 0 0"
+              size="0.015" material="handle_mat" mass="0.15"/>
+        <geom name="handle_grip" type="capsule" fromto="-0.12 -0.04 0  -0.12 0.04 0"
+              size="0.018" material="handle_mat" mass="0.10"/>
+        <site name="handle_grip_site" pos="-0.12 0 0" size="0.01"/>
+      </body>
+
+      <!-- Latch: sprung slide bolt beside the handle -->
+      <body name="latch" pos="-0.03 0.05 0.15">
+        <joint name="latch_slide" type="slide" axis="0 1 0" range="0 0.04"
+               damping="2.0" springref="0" stiffness="40"/>
+        <geom name="latch_bolt" type="box" size="0.012 0.03 0.012"
+              material="latch_mat" mass="0.05"/>
+        <site name="latch_tab_site" pos="-0.015 0 0" size="0.008"/>
+      </body>
+
+      <!-- T-03 target: connector socket — rectangular recess built from four
+           walls, opening toward -x -->
+      <body name="socket" pos="-0.02 0.22 -0.10">
+        <geom name="socket_wall_top" type="box" size="0.030 0.026 0.004" pos="-0.030 0 0.018" material="socket_mat"/>
+        <geom name="socket_wall_bot" type="box" size="0.030 0.026 0.004" pos="-0.030 0 -0.018" material="socket_mat"/>
+        <geom name="socket_wall_l" type="box" size="0.030 0.004 0.014" pos="-0.030 -0.022 0" material="socket_mat"/>
+        <geom name="socket_wall_r" type="box" size="0.030 0.004 0.014" pos="-0.030 0.022 0" material="socket_mat"/>
+        <site name="socket_entry_site" pos="-0.062 0 0" size="0.008"/>
+      </body>
+    </body>
+
+    <!-- Tray holding the free connector plug (start state for T-03) -->
+    <body name="tray" pos="0.35 0.25 0.80">
+      <geom name="tray_top" type="box" size="0.10 0.10 0.01" material="tray_mat"/>
+      <geom name="tray_leg" type="box" size="0.02 0.02 0.40" pos="0 0 -0.40" material="tray_mat"/>
+      <geom name="tray_lip_x" type="box" size="0.005 0.10 0.02" pos="0.10 0 0.02" material="tray_mat"/>
+      <geom name="tray_lip_y" type="box" size="0.10 0.005 0.02" pos="0 0.10 0.02" material="tray_mat"/>
+    </body>
+
+    <!-- Free connector plug: peg sized to the socket recess with clearance -->
+    <body name="plug" pos="0.35 0.25 0.85">
+      <freejoint name="plug_free"/>
+      <geom name="plug_body" type="box" size="0.025 0.018 0.010" material="plug_mat" mass="0.08"/>
+      <geom name="plug_grip" type="box" size="0.012 0.014 0.020" pos="0.035 0 0" material="plug_mat" mass="0.04"/>
+      <site name="plug_grip_site" pos="0.035 0 0" size="0.008"/>
+    </body>
+  </worldbody>
+
+  <keyframe>
+    <!-- home: handle closed, latch retracted, plug resting on tray -->
+    <key name="home" qpos="0 0 0.35 0.25 0.85 1 0 0 0"/>
+  </keyframe>
+</mujoco>

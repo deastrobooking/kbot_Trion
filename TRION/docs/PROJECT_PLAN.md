@@ -125,7 +125,8 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 - [x] **Preliminary Hazard Analysis (PHA) v0 and safety case skeleton** ([PHA.md](PHA.md)) feeding the FDIR matrix.
 - [x] **Comms & time-sync model**: latency budgets, single time base, delay-tolerant command classes (in [REQUIREMENTS.md](REQUIREMENTS.md)).
 - [x] **Canonical worksites and task set** defined ([WORKSITES_AND_TASKS.md](WORKSITES_AND_TASKS.md)) — these drive skill design and sim scenarios from day one.
-- [ ] Digital twin: K-Bot in MuJoCo with worksite W1 (panel with handle, latch, connector).
+- [x] Digital twin worksite: W1 scene in MuJoCo (panel with handle, latch, connector + free plug) loads and steps stably ([sim/](../sim/)). K-Bot model composition into the scene remains open.
+- [x] CI skeleton: fmt + clippy + test + demo for `TRION/src` on every push/PR touching `TRION/**` ([.github/workflows/trion-ci.yml](../../.github/workflows/trion-ci.yml)).
 - [x] Requirements doc v0: safe-mode, FDIR matrix v0, command-authority levels ([REQUIREMENTS.md](REQUIREMENTS.md), [FDIR_MATRIX.md](FDIR_MATRIX.md)).
 - **Exit criteria:** robot (sim) streams health telemetry; killing a service triggers detection + logged recovery within a bounded time; PHA v0 reviewed.
 

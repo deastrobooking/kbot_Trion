@@ -1,0 +1,37 @@
+# TRION CI — build/lint/test gate for the TRION workspace (TR-P4-070).
+# Lives at the repo root because GitHub Actions requires it; scoped to
+# TRION/** so it never runs for upstream K-Bot changes. This file is a
+# deliberate exception to the "all Trion code under TRION/" rule
+# (see TRION/AGENT_GUIDE.md).
+name: TRION CI
+
+on:
+  push:
+    branches: [Trion]
+    paths: ['TRION/**', '.github/workflows/trion-ci.yml']
+  pull_request:
+    paths: ['TRION/**', '.github/workflows/trion-ci.yml']
+
+jobs:
+  rust:
+    name: fmt + clippy + test (TRION/src)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TRION/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: TRION/src
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Tests (requirement-traced)
+        run: cargo test
+      - name: Walking-skeleton demo (Phase 0 exit criteria)
+        run: cargo run --bin walking_skeleton
