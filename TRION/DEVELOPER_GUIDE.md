@@ -1,95 +1,128 @@
-# Trion Developer Guide
+# Trion Developer Guide — K-Bot Architecture & Rust
 
-Trion is our experimental layer on top of the upstream [K-Bot](https://github.com/kscalelabs/kbot) project from K-Scale Labs. This guide explains how the repo is organized, how the branching model works, and how to develop features here without polluting the upstream project.
+Trion is our experimental layer on top of the upstream [K-Bot](https://github.com/kscalelabs/kbot) humanoid robot from K-Scale Labs. This guide explains what K-Bot actually is under the hood, how Rust-native the stack is, and how the pieces fit together. For git workflow, branching, and submodule mechanics, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
-## Repository layout
+## Is this a Rust robotics framework? (Yes — mostly)
+
+The umbrella repo looks like "just docs" because the software lives in **git submodules** — the folders are empty until you run `git submodule update --init`. Once initialized, the real code appears, and the language split (measured from the actual repos) is:
+
+| Component         | Languages                  | Role                                        |
+| ----------------- | -------------------------- | ------------------------------------------- |
+| `kos-kbot/`       | ~50% Rust / ~50% Python    | The robot's runtime OS layer (core is Rust; Python is test/utility scripts) |
+| `kbot-inference/` | ~65% Rust / ~35% Python    | On-robot neural-net policy inference (Rust binary running ONNX) |
+| `ksim-kbot/`      | ~100% Python               | RL training environments (JAX/MuJoCo via K-Scale's `ksim`) |
+| `kos` (upstream dep, not vendored here) | ~55% Rust / ~40% Python | K-Scale OS core framework — the actual "Rust robotics framework" |
+
+**The verdict:** everything that runs *on the robot* — hardware drivers, the OS service layer, real-time inference — is Rust. Everything used to *train* the robot — simulation, RL — is Python/JAX. That split is deliberate: Rust for reliability and low latency on embedded hardware (the robot's compute is an aarch64 Linux board), Python for ML research velocity.
+
+## The stack, top to bottom
 
 ```
-kbot_Trion/
-├── assets/           # Upstream: images and media
-├── electrical/       # Upstream: electrical design docs
-├── mechanical/       # Upstream: mechanical design docs
-├── kos-kbot/         # Upstream submodule: robot operating system (KOS)
-├── ksim-kbot/        # Upstream submodule: simulation & RL training
-├── kbot-inference/   # Upstream submodule: model inference
-└── TRION/            # OURS: all Trion-specific code, docs, and experiments
+┌────────────────────────────────────────────────────┐
+│  ksim-kbot (Python/JAX)                            │
+│  Train locomotion/standing policies in simulation  │
+│  → exports policy as ONNX file                     │
+└───────────────────────┬────────────────────────────┘
+                        │  .onnx policy file
+┌───────────────────────▼────────────────────────────┐
+│  kbot-inference (Rust)                             │
+│  Loads ONNX via `ort` (ONNX Runtime), runs the     │
+│  control loop: IMU + joint states in → torques out │
+└───────────────────────┬────────────────────────────┘
+                        │  gRPC / direct crate calls
+┌───────────────────────▼────────────────────────────┐
+│  kos-kbot (Rust) — implements KOS for this robot   │
+│  Hardware abstraction: actuators, IMU, power       │
+│  board, cameras, process manager                   │
+└───────────────────────┬────────────────────────────┘
+                        │  CAN bus / serial / USB
+┌───────────────────────▼────────────────────────────┐
+│  Physical K-Bot: Robstride actuators, Hiwonder/    │
+│  Hexmove IMUs, power board, cameras                │
+└────────────────────────────────────────────────────┘
 ```
 
-**Rule of thumb:** everything outside `TRION/` mirrors upstream K-Bot. Everything inside `TRION/` is ours. This separation keeps our diff against upstream clean, so we can:
+### KOS — the framework itself
 
-1. Pull upstream changes into `master` without merge conflicts.
-2. Cherry-pick or open PRs to the original K-Bot project from a clean base.
-3. Iterate freely on our own features without worrying about upstream structure.
+[KOS](https://github.com/kscalelabs/kos) (K-Scale OS) is the actual Rust robotics framework. It defines gRPC services for robot capabilities (actuators, IMU, video, process management), and robot-specific crates like `kos-kbot` implement those services for real hardware. Client code (Python or anything gRPC-speaking) talks to the robot through these services. It's consumed here as a crates.io dependency (`kos = "0.7.4"`), not a submodule.
 
-## Branching model
+### kos-kbot — the K-Bot hardware layer
 
-| Branch   | Purpose                                                                 |
-| -------- | ----------------------------------------------------------------------- |
-| `master` | Tracks upstream K-Bot. Only architecture/structural changes we intend to keep in sync with (or contribute back to) upstream land here. |
-| `Trion`  | Our integration/testing branch. New features are built and tested here inside `TRION/` before anything is considered for merging. |
+The Rust sources (in `kos-kbot/src/`) map directly to hardware subsystems:
 
-### Workflow
+- [actuator.rs](../kos-kbot/src/actuator.rs) — joint control via the `robstride` crate (CAN-bus servo actuators)
+- [hexmove.rs](../kos-kbot/src/hexmove.rs) / [hiwonder.rs](../kos-kbot/src/hiwonder.rs) — IMU drivers (via the `imu` crate, Linux-only target deps)
+- [process_manager.rs](../kos-kbot/src/process_manager.rs) — service lifecycle, video via GStreamer
+- `scripts/` — Python utilities for bring-up and testing (`move_motor.py`, `read_imu.py`, `walk.py`, `zero_in_place.py`, …) — this is where most of the repo's Python lives
 
-1. Branch off `Trion` for a feature: `git checkout -b trion/<feature-name> Trion`.
-2. Keep all new code, scripts, configs, and docs inside `TRION/`.
-3. Open a PR (or merge) back into `Trion` once the feature works.
-4. If a change is genuinely an improvement to K-Bot itself (not Trion-specific), make it outside `TRION/` on a branch off `master`, and consider contributing it upstream to [kscalelabs/kbot](https://github.com/kscalelabs/kbot).
+Notable crates it pulls in: `robstride` (actuators), `imu`/`hiwonder` (IMUs), `kbot-pwrbrd` (power board), `krec` (telemetry recording), `tokio` (async runtime), `gstreamer` (camera pipelines).
 
-### Syncing with upstream
+### kbot-inference — the control loop
 
-Add the upstream remote once:
+A Rust binary (crate name `kbot`) that loads a trained policy (`position_control.onnx` ships in the repo) with the `ort` ONNX Runtime bindings, reads IMU + actuator state, and emits position/torque commands. Uses `tonic` (gRPC), `ndarray` (tensor math), `clap` (CLI). Same hardware crates (`robstride`, `hiwonder`, `kbot-pwrbrd`) on Linux targets.
+
+### ksim-kbot — training
+
+Pure Python. Defines K-Bot RL tasks on K-Scale's `ksim` framework (JAX-based, MuJoCo physics): `standing/` (MLP and LSTM variants), `misc_tasks/`, and `deploy/` (`sim.py`/`real.py` for running trained policies). Robot meshes/assets come from a nested `kscale-assets` submodule. Trained policies export to ONNX for the Rust inference stack — that ONNX file is the contract between the Python world and the Rust world.
+
+## Building the Rust components
+
+Prerequisites: a Rust toolchain (`rustup`), and [`cross`](https://github.com/cross-rs/cross) for targeting the robot.
 
 ```bash
-git remote add upstream https://github.com/kscalelabs/kbot.git
+# native build (stub hardware features — fine on macOS for compile checks)
+cd kos-kbot && cargo build
+
+# cross-compile for the robot's onboard computer
+cross build --release --target aarch64-unknown-linux-gnu
+
+# run with logging
+RUST_LOG=debug cargo run
 ```
 
-Then to sync:
+Note the Linux-gated dependencies (`[target.'cfg(target_os = "linux")'.dependencies]` in both Cargo.tomls): real IMU/actuator drivers only compile on Linux. On macOS you build against stubs — good for development, but hardware code paths need the robot (or a Linux box) to exercise.
+
+Upstream Rust conventions (hold Trion Rust code to the same bar):
+
+- `cargo fmt --all`, `cargo clippy`, `cargo test` before committing
+- `tracing` for logging, `eyre` for error handling
+- **No `unwrap()` or `expect()`**
+
+## Setting up ksim-kbot (training)
 
 ```bash
-git checkout master
-git fetch upstream
-git merge upstream/master
-git checkout Trion
-git merge master   # bring upstream updates into Trion
+cd ksim-kbot
+pip install -e .                              # Python 3.11
+git submodule update --init --recursive       # pulls kscale-assets
 ```
 
-## Working with submodules
+See the [ksim docs](https://docs.kscale.dev/docs/ksim) for training and debugging workflows. Note: JAX training is realistically a Linux + NVIDIA GPU workflow.
 
-The three software components are git submodules pinned to specific commits. After cloning:
+## Hardware side
 
-```bash
-git submodule update --init --recursive
-```
+- `mechanical/` — CAD is on [Onshape](https://cad.onshape.com/publications/e15cf8edefacbba3009917c0/); design goals are repairability, mass-manufacturability, and modularity (swappable hands via lens-mount, swappable USB-device head).
+- `electrical/` — points to the [K-Scale electrical docs](https://docs.kscale.dev/robots/k-bot/electrical/). Arms/hands share 48 V power and CAN bus lines.
 
-To update all submodules to their latest master (as upstream recommends):
+## Where Trion fits
 
-```bash
-git submodule foreach 'git checkout master && git pull origin master'
-```
+Our code lives in `TRION/` and should *consume* the stack rather than fork it:
 
-Do **not** commit submodule pointer changes casually — they change which version of KOS/sim/inference the repo references. Only bump them deliberately.
+- **Talk to the robot** through KOS gRPC services (any language) or by depending on the published crates (`kos`, `robstride`, etc.) from Rust code in `TRION/src/`.
+- **New training tasks** can live in `TRION/` as a package that imports `ksim`, mirroring `ksim_kbot`'s structure.
+- **Patches to K-Scale code** go upstream (see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)) — not into the submodules.
 
-If we need to modify a submodule's code for Trion, prefer one of these (in order):
-
-1. Wrap/extend it from code living in `TRION/` instead of patching the submodule.
-2. Fork the submodule repo, and point `.gitmodules` at our fork on the `Trion` branch only.
-
-## TRION/ folder conventions
-
-Suggested structure as the folder grows:
+Suggested layout as the folder grows:
 
 ```
 TRION/
 ├── DEVELOPER_GUIDE.md   # this file
-├── AGENT_GUIDE.md       # guidance for AI agents working in this repo
-├── docs/                # design notes, experiment writeups
-├── src/                 # Trion feature code
-├── scripts/             # tooling, automation, setup scripts
-└── experiments/         # throwaway prototypes (safe to delete)
+├── AGENT_GUIDE.md       # rules for AI agents in this repo
+├── docs/                # CONTRIBUTING.md, design notes, experiment writeups
+├── src/                 # Trion feature code (Rust crate or Python package)
+├── scripts/             # tooling and automation
+└── experiments/         # prototypes (scratch/ is git-ignored)
 ```
 
-Create these directories as needed — don't add empty placeholders.
+## Licensing
 
-## Licensing note
-
-Upstream software is GPL v3 and hardware is CERN-OHL-S (see `LICENSE` and `LICENSE-HW` at the repo root). Code in `TRION/` that links against or derives from upstream software inherits GPL v3 obligations — keep this in mind before adding proprietary code here.
+The umbrella repo: `CERN-OHL-S` (hardware) / `GPL v3` (software) per the root `LICENSE` files. The submodules themselves are **MIT-licensed** (kos-kbot, ksim-kbot). Trion code that only *uses* MIT crates can be licensed freely; anything derived from GPL-covered parts of the umbrella inherits GPL v3.

@@ -29,6 +29,8 @@ Submodules may be uninitialized (empty folders). Initialize with `git submodule 
 
 ## Conventions
 
+Git workflow details (remotes, branch model, submodule handling, upstream sync) live in [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — follow it.
+
 - Docs in Markdown, placed in `TRION/docs/`.
 - Scripts in `TRION/scripts/`, feature code in `TRION/src/`, prototypes in `TRION/experiments/`.
 - Commit messages: concise, imperative mood (e.g. `Add teleop latency probe`). Prefix Trion feature branches with `trion/`.
