@@ -1,11 +1,13 @@
 //! FDIR escalation supervisor (TR-P4-012, FDIR entry F-01): one bounded
 //! recovery path per fault, then safe-mode. No infinite retry loops.
 
+use crate::command::kos_shim::SafeStateAction;
 use crate::command::safe_mode::ModeController;
 use crate::fdir::watchdog::ServiceDown;
 use crate::telemetry::events::{EventKind, EventLog};
 use crate::time::{duration_ms, RuntimeClock};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{mpsc, watch};
 
@@ -31,6 +33,7 @@ pub struct Supervisor<C: ServiceController> {
     clock: RuntimeClock,
     /// Restart timestamps per service; bounded at `max_restarts` entries.
     restart_history: HashMap<String, Vec<u64>>,
+    safe_state_action: Option<Arc<dyn SafeStateAction>>,
 }
 
 impl<C: ServiceController> Supervisor<C> {
@@ -48,7 +51,13 @@ impl<C: ServiceController> Supervisor<C> {
             modes,
             clock,
             restart_history: HashMap::new(),
+            safe_state_action: None,
         }
+    }
+
+    pub fn with_safe_state_action(mut self, action: Arc<dyn SafeStateAction>) -> Self {
+        self.safe_state_action = Some(action);
+        self
     }
 
     pub async fn run(
@@ -92,7 +101,7 @@ impl<C: ServiceController> Supervisor<C> {
 
         let restarts_in_window = u32::try_from(history.len()).unwrap_or(u32::MAX);
         if restarts_in_window >= self.policy.max_restarts {
-            self.modes.enter_safe(&format!(
+            self.enter_safe(&format!(
                 "service '{}' exceeded {} restarts within {} ms",
                 fault.service, self.policy.max_restarts, window_ms
             ));
@@ -117,9 +126,26 @@ impl<C: ServiceController> Supervisor<C> {
                     Some(&fault.service),
                     format!("restart failed: {err}"),
                 );
-                self.modes
-                    .enter_safe(&format!("restart of '{}' failed", fault.service));
+                self.enter_safe(&format!("restart of '{}' failed", fault.service));
             }
+        }
+    }
+
+    fn enter_safe(&self, reason: &str) {
+        if let Some(action) = &self.safe_state_action {
+            if let Err(error) = action.enter_safe_state(reason) {
+                // The action enters logical safe-mode before touching the
+                // transport. Keep that state latched and record the missed
+                // deadline/transport failure as safety evidence.
+                self.modes.enter_safe(reason);
+                self.events.record(
+                    EventKind::RecoveryFailed,
+                    None,
+                    format!("safe-state action failed: {error}"),
+                );
+            }
+        } else {
+            self.modes.enter_safe(reason);
         }
     }
 }

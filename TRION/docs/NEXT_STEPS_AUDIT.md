@@ -5,7 +5,7 @@
 
 ## Executive summary
 
-Trion has a green native Rust foundation, a requirement-traced P4 runtime skeleton, a loadable W1 worksite, and CI gates for Rust plus the MuJoCo scene. Phase 0 is not closed because the K-Bot model and runtime are not yet integrated into W1, safe-mode does not yet reach a simulated actuator path, and PHA v0 still needs human review.
+Trion has a green native Rust foundation, a requirement-traced P4 runtime, a composed pinned K-Bot + W1 model, and CI gates for Rust plus MuJoCo. Phase 0 is not closed because the transport-agnostic safety path is not yet connected to MuJoCo or real KOS, and PHA v0 still needs human review.
 
 The next milestone is one vertical safety demonstration: **K-Bot in W1 receives a command through the Trion safety gate; an injected fault causes a measured safe actuator response and a structured event record.**
 
@@ -18,11 +18,11 @@ The next milestone is one vertical safety demonstration: **K-Bot in W1 receives 
 | Telemetry bounds | ✅ Unit verified | Zero capacity rejected; unobserved and receiver-overflow drops counted |
 | Watchdog bound | ✅ Unit verified | Sampling is constrained to the heartbeat interval; deterministic elapsed-time test covers TR-P4-011 |
 | PHA, requirements, FDIR, traceability | ✅ v0 artifacts | PHA human review/sign-off remains open |
-| W1 MuJoCo worksite | ✅ Fixture | Scene loads and steps; K-Bot model is not composed into it |
+| W1 MuJoCo worksite | ✅ Composed | Standalone fixture runs 2,000 steps; pinned K-Bot + W1 loads as one 20-actuator model and runs a 100-step smoke |
 | TRION CI | ✅ Skeleton | Rust gates, runtime demo, and headless W1 smoke test |
 | Command safety gate | 🟡 Core verified | Manifest validation, limit clamping, unknown/non-finite rejection, and safe-mode rejection are unit tested; KOS integration remains open |
-| KOS safe-state path | 🔴 | No KOS shim or measured zero-torque/brake response |
-| Fault-injected integrated sim | 🔴 | Runtime and MuJoCo remain separate demonstrations |
+| Safety shim | 🟡 Core verified | Supervisor fault escalation reaches a simulated 20-actuator safe-state transport within the 100 ms bound; real KOS/MuJoCo transports remain open |
+| Fault-injected integrated MuJoCo | 🔴 | Runtime and the composed physics model remain separate processes |
 
 ## Phase 0 exit assessment
 
@@ -30,16 +30,16 @@ The documented exit criterion is:
 
 > Robot (sim) streams health telemetry; killing a service triggers detection + logged recovery within a bounded time; PHA v0 reviewed.
 
-The synthetic runtime demo proves the supervision logic, and W1 proves the fixture scene is stable. They do not yet prove the criterion as one integrated system. PHA review also requires a human sign-off. Therefore **Phase 0 remains open**.
+The runtime tests prove fault escalation through the transport boundary, and the composed model proves K-Bot/W1 asset integration. They are not yet one closed-loop MuJoCo system. PHA review also requires a human sign-off. Therefore **Phase 0 remains open**.
 
 ## Prioritized next actions
 
 ### P0 — close Phase 0
 
-1. **Compose K-Bot into W1.** Pull the pinned `kscale-assets` model through the existing `ksim-kbot` submodule and create a Trion-owned composed scene.
+1. **Connect the safety shim to composed MuJoCo.** Implement an `ActuatorTransport` that writes the 20 sanitized commands into the model and maps safe-state to zero control/braking.
 2. **Review and approve the robot configuration manifest.** The checked-in manifest is validated and explicitly simulation-only; controls/hardware owners must review its limits before hardware use.
-3. **Implement the KOS safety shim.** Wire the implemented command gate into the sole forwarding path and add the privileged zero-torque/brake safe-state operation.
-4. **Connect runtime and simulation.** Stream simulated health, inject at least one service or sensor fault, and measure the safe response bound.
+3. **Connect the shim to real KOS gRPC.** Make it the sole forwarding path after the simulated transport is green.
+4. **Run closed-loop fault injection.** Stream simulated health, inject at least one service or sensor fault, and measure the MuJoCo actuator response bound.
 5. **Record PHA v0 review.** Add reviewer, date, findings, dispositions, and sign-off; automation must not self-certify this step.
 
 ### P1 — begin only after the vertical safety slice
@@ -65,7 +65,8 @@ The synthetic runtime demo proves the supervision logic, and W1 proves the fixtu
 - [x] W1 fixture scene loads and steps in CI.
 - [x] Telemetry overflow and watchdog timing requirements have direct tests.
 - [x] A simulation-only robot manifest and actuator command gate have direct tests.
-- [ ] K-Bot is composed into W1.
-- [ ] Simulated actuator commands pass through the Trion safety gate.
-- [ ] Injected fault produces a bounded safe actuator response and event evidence.
+- [x] K-Bot is composed into W1 from the pinned upstream assets.
+- [x] Injected supervisor fault reaches a simulated actuator transport through the safety shim within 100 ms.
+- [ ] Sanitized actuator commands drive the composed MuJoCo model.
+- [ ] Injected fault produces a bounded zero-control/brake response in MuJoCo.
 - [ ] PHA v0 has a recorded human review.

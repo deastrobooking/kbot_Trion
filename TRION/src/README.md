@@ -11,7 +11,7 @@ The Cargo workspace for all Trion on-robot and ground-segment code. One crate pe
 | `trion-perception` | planned (Phase 2) | P2 | Localization, fixture recognition, worksite mapping — non-safety-critical tier |
 | `mission-control` | planned (Phase 1) | P5 | Ground console: plan executor, telemetry dashboards, command classes/auth client |
 
-Sim assets and fault-injection scenarios live outside this workspace in `TRION/sim/` (Python/ksim, planned).
+Simulation assets and composition checks live outside this workspace in `TRION/sim/`; closed-loop fault injection is the next integration step.
 
 ## Crate-internal convention
 
@@ -27,8 +27,11 @@ trion-runtime/src/
 ├── fdir/           # detect→isolate→recover→escalate; one file per monitor
 │   ├── watchdog.rs         (F-01)
 │   └── supervisor.rs
-├── command/        # safe-mode; later: command classes (042), auth (050)
+├── command/        # safe-mode, manifest gate, transport safety shim
+│   ├── gate.rs
+│   ├── kos_shim.rs
 │   └── safe_mode.rs
+├── config/         # versioned robot-manifest schema + validation
 └── bin/            # runnable demos & tools
     └── walking_skeleton.rs
 ```

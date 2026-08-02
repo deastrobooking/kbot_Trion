@@ -18,7 +18,7 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | TR-P4-011 | RT-04 | `runtime::missed_heartbeat_detected_within_bound` | Integration | Deterministic paused-time detection at, and not before, (miss_limit + 1) × interval; slow monitor ticks are clamped | ✅ |
 | TR-P4-012 | RT-05 | `runtime::repeated_faults_escalate_to_safe_mode_and_recovery_is_explicit` | Integration | Restart budget exhausted → safe-mode | ✅ |
 | TR-P4-013 | T-SIM-03 | Per-release FDIR sweep (every F-xx entry injected once, e.g. IMU dropout mid-task) | Sim | Each entry: detect → isolate → recover/escalate as specified | 🔜 |
-| TR-P4-020 | RT-05 | Safe-mode state machine entry | Integration | Mode flips, event recorded | ✅ (logic) |
+| TR-P4-020 | RT-05, RT-10 | Safe-mode state entry + supervisor-to-actuator transport path | Integration | Mode latches without subscribers; 20-actuator safe state commanded within 100 ms and event recorded | ✅ (simulated transport) / 🔜 (MuJoCo + hardware) |
 | TR-P4-020 | T-SIM-01 / T-HW-01 | Timed safe-mode on injected actuator overcurrent, incl. zero-torque path | Sim + HW | Entry ≤ 100 ms of decision; no joint exceeds limits | 🔜 |
 | TR-P4-021 | RT-05 | Explicit-recovery-only verified | Integration | No auto-exit; audited operator exit works | ✅ |
 | TR-P4-022 | — | Dependency audit: `trion-runtime` has no perception/network deps | Review/CI | `cargo tree` contains no such crates; architecture review at phase gates | ✅ (manual) / 🔜 (CI check) |
@@ -39,6 +39,7 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | P1 (E-stop) | T-HW-03 | E-stop during motion | Hardware | Immediate halt regardless of command source; no rebound | 🔜 |
 | P2 (policy service) | T-SIM-12 | `trion-policy-service` runs worksite W1 dry-run | Sim | ONNX inference loop executes without direct hardware deps | 🔜 |
 | P2 (robot manifest) | RT-09 | Robot manifest validation rejects duplicate IDs and invalid limits | Unit | Startup validation fails with descriptive error; unreviewed manifest refuses hardware approval | ✅ |
+| Phase 0 digital twin | T-SIM-14 | `compose_w1_kbot.py` loads pinned K-Bot + W1 | Sim | Named robot, fixture targets, 20 actuators, and finite state after 100 steps | ✅ |
 | P3 (skill preconditions) | T-SIM-06 | Skill invoked with failed precondition (e.g., poor localization) | Sim | Skill refuses to start; operator notified | 🔜 |
 
 ## Coverage targets

@@ -46,7 +46,7 @@ impl ModeController {
         if self.is_safe() {
             return;
         }
-        let _ = self.tx.send(RunMode::Safe);
+        self.tx.send_replace(RunMode::Safe);
         self.events
             .record(EventKind::SafeModeEntered, None, reason.to_owned());
     }
@@ -58,7 +58,7 @@ impl ModeController {
         if !self.is_safe() {
             return;
         }
-        let _ = self.tx.send(RunMode::Nominal);
+        self.tx.send_replace(RunMode::Nominal);
         self.events.record(
             EventKind::SafeModeExited,
             None,

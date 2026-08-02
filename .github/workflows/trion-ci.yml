@@ -41,6 +41,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+      - name: Hydrate nested K-Bot LFS assets
+        run: git -C ksim-kbot/ksim_kbot/kscale-assets lfs pull
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -48,3 +53,5 @@ jobs:
         run: python -m pip install 'mujoco==3.1.6'
       - name: Load and step W1 headlessly
         run: python TRION/sim/load_scene.py --steps 2000
+      - name: Compose pinned K-Bot with W1
+        run: python TRION/sim/compose_w1_kbot.py --steps 100

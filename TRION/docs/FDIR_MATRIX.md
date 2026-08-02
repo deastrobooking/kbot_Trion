@@ -14,7 +14,7 @@ Status: ✅ implemented in `trion-runtime` v0 skeleton · 🔜 planned.
 | F-06 | Control-loop frame overrun | Loop time > budget (WCET monitor) | Control path stage timing | Skip-frame policy; degrade control rate | N consecutive overruns | H-01 | 🔜 |
 | F-07 | Ground comms loss | Link heartbeat timeout | Network layer vs mission-control process | Complete current queued step to next gate, then hold | Hold exceeds configured timeout | H-01 | 🔜 |
 | F-08 | Power board fault / undervoltage | `kbot-pwrbrd` telemetry out of range | Rail / board channel | Load-shed non-critical services | Voltage below safe-operation floor → controlled shutdown posture | H-01 | 🔜 |
-| F-09 | Joint limit / self-collision imminent | Kinematic monitor on commanded trajectory | Offending command + joint | Clamp command, stop current motion segment | Repeated violations in one task (indicates bad state estimate) | H-01, H-02 | 🔜 |
+| F-09 | Joint limit / self-collision imminent | Command gate checks finite position/velocity/torque against the manifest; self-collision monitor planned | Offending actuator command | Clamp command; unknown/non-finite commands rejected | Repeated violations in one task (planned) | H-01, H-02 | 🟡 Command gate implemented / 🔜 trajectory monitor + escalation |
 | F-10 | State-estimate divergence (localization loss) | Filter innovation/covariance beyond threshold | Perception tier (non-safety-critical) | Stop motion, hold, attempt re-localization | Re-localization fails within timeout during a contact task | H-01, H-02 | 🔜 |
 
 ## Conventions

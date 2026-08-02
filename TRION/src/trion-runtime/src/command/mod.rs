@@ -4,4 +4,5 @@
 //! two-step arming (TR-P4-050).
 
 pub mod gate;
+pub mod kos_shim;
 pub mod safe_mode;

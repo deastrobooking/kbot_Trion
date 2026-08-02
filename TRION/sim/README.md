@@ -6,7 +6,8 @@ Simulation assets for the Trion space operations engineer. Worksite scenes are p
 
 ```
 sim/
-├── load_scene.py        # load + step a scene; Phase 0 acceptance check
+├── load_scene.py        # load + step the standalone fixture
+├── compose_w1_kbot.py   # merge pinned K-Bot + W1 and step the full model
 └── worksites/
     └── w1_panel.xml     # Worksite W1: panel with handle (T-02), latch,
                          # connector socket + free plug (T-03)
@@ -20,6 +21,7 @@ MuJoCo Python bindings are required (`pip install mujoco`; use `mujoco<3.2` on P
 python sim/load_scene.py                 # headless smoke test, exit 0 = stable
 python sim/load_scene.py --view          # interactive viewer
 python sim/load_scene.py --steps 5000
+python sim/compose_w1_kbot.py --steps 100
 ```
 
 ## Scene conventions
@@ -29,6 +31,8 @@ python sim/load_scene.py --steps 5000
 - Every scene defines a `home` keyframe as the canonical start state for campaigns.
 - Worksites W2 (ground-station rack) and W3 (cable interface) follow in Phases 2–3 per [WORKSITES_AND_TASKS.md](../docs/WORKSITES_AND_TASKS.md).
 
-## K-Bot integration (next)
+## K-Bot integration
 
-The robot model comes from `kscale-assets` (a nested submodule of `ksim-kbot`, pulled via `git submodule update --init --recursive` inside `ksim-kbot/`). The composition step — K-Bot + worksite in one scene via MJCF `<include>`/attach — is the remaining Phase 0 digital-twin work, followed by the fault-injection harness (kill services, drop IMU, spike temperatures mid-task) that exercises the FDIR matrix per release (TR-P4-013).
+The robot model comes from `kscale-assets`, pinned as a nested submodule of `ksim-kbot`. Initialize it with `git submodule update --init --recursive ksim-kbot`. `compose_w1_kbot.py` combines that exact robot model with the Trion-owned W1 fixture in memory, preserving the upstream boundary and avoiding copied meshes or generated absolute paths in Git. CI loads and steps both the standalone fixture and composed model.
+
+The composed smoke test proves model integration and physics stability; it does not claim controlled standing. The remaining Phase 0 simulation work is connecting actuator commands and injected runtime faults to this model.

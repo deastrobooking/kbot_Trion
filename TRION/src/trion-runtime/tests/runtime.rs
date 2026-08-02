@@ -1,12 +1,37 @@
 //! Requirement-verifying tests. Each test names the TR-P4 requirement it
 //! verifies (traceability, see TRION/docs/REQUIREMENTS.md).
 
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 use tokio::sync::{mpsc, watch};
 use trion_runtime::{
-    EscalationPolicy, EventLog, HeartbeatPolicy, ModeController, RunMode, RuntimeClock,
-    ServiceController, ServiceDown, Supervisor, Watchdog,
+    ActuatorCommand, ActuatorTransport, CommandGate, EscalationPolicy, EventLog, HeartbeatPolicy,
+    KosSafetyShim, ModeController, RobotManifest, RunMode, RuntimeClock, ServiceController,
+    ServiceDown, Supervisor, Watchdog,
 };
+
+#[derive(Clone, Default)]
+struct SafeTransport(Arc<Mutex<Vec<u32>>>);
+
+impl SafeTransport {
+    fn safe_ids(&self) -> MutexGuard<'_, Vec<u32>> {
+        match self.0.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        }
+    }
+}
+
+impl ActuatorTransport for SafeTransport {
+    fn forward(&self, _commands: &[ActuatorCommand]) -> eyre::Result<()> {
+        Ok(())
+    }
+
+    fn command_safe_state(&self, actuator_ids: &[u32]) -> eyre::Result<()> {
+        *self.safe_ids() = actuator_ids.to_vec();
+        Ok(())
+    }
+}
 
 struct OkController;
 
@@ -138,5 +163,67 @@ async fn repeated_faults_escalate_to_safe_mode_and_recovery_is_explicit() -> eyr
         log.contains("SafeModeExited"),
         "event log must show audited exit"
     );
+    Ok(())
+}
+
+/// TR-P4-012/TR-P4-020: an injected supervised-service fault reaches the
+/// actuator safe-state transport within the configured 100 ms bound.
+#[tokio::test]
+async fn supervisor_escalation_commands_bounded_actuator_safe_state() -> eyre::Result<()> {
+    const MANIFEST: &str = include_str!("../../../config/robot_manifest.yaml");
+    let manifest = RobotManifest::from_yaml(MANIFEST)?;
+    let actuator_ids = manifest
+        .robot
+        .actuators
+        .iter()
+        .map(|actuator| actuator.id)
+        .collect();
+    let gate = CommandGate::new(&manifest.robot.actuators)?;
+    let clock = RuntimeClock::new();
+    let events = EventLog::new(clock, 64)?;
+    let modes = ModeController::new(events.clone());
+    let transport = SafeTransport::default();
+    let shim = Arc::new(KosSafetyShim::new(
+        transport.clone(),
+        gate,
+        modes.clone(),
+        events.clone(),
+        actuator_ids,
+        Duration::from_millis(100),
+    )?);
+    let supervisor = Supervisor::new(
+        OkController,
+        EscalationPolicy {
+            max_restarts: 0,
+            window: Duration::from_secs(1),
+        },
+        events.clone(),
+        modes.clone(),
+        clock,
+    )
+    .with_safe_state_action(shim);
+    let (fault_tx, fault_rx) = mpsc::channel(1);
+    let (_shutdown_tx, shutdown_rx) = watch::channel(false);
+    tokio::spawn(supervisor.run(fault_rx, shutdown_rx));
+
+    fault_tx
+        .send(ServiceDown {
+            service: "actuator-svc".to_owned(),
+            silent_for_ms: 100,
+        })
+        .await?;
+    let mut mode_rx = modes.subscribe();
+    tokio::time::timeout(Duration::from_millis(100), async {
+        while *mode_rx.borrow() != RunMode::Safe {
+            if mode_rx.changed().await.is_err() {
+                break;
+            }
+        }
+    })
+    .await?;
+
+    assert!(modes.is_safe());
+    assert_eq!(transport.safe_ids().len(), 20);
+    assert!(events.to_jsonl().contains("SafeStateCommanded"));
     Ok(())
 }

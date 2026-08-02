@@ -15,6 +15,9 @@ pub enum EventKind {
     RecoveryFailed,
     SafeModeEntered,
     SafeModeExited,
+    CommandLimited,
+    CommandRejected,
+    SafeStateCommanded,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
