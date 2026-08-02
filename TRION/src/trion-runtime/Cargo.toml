@@ -9,6 +9,10 @@ description = "Mission-critical runtime supervision for the Trion space operatio
 eyre = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml_ng = "0.10"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }

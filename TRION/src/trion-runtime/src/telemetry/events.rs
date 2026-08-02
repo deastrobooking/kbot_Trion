@@ -33,12 +33,15 @@ pub struct EventLog {
 }
 
 impl EventLog {
-    pub fn new(clock: RuntimeClock, capacity: usize) -> Self {
-        Self {
+    pub fn new(clock: RuntimeClock, capacity: usize) -> eyre::Result<Self> {
+        if capacity == 0 {
+            return Err(eyre::eyre!("event log capacity must be greater than zero"));
+        }
+        Ok(Self {
             inner: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
             capacity,
             clock,
-        }
+        })
     }
 
     pub fn record(&self, kind: EventKind, service: Option<&str>, detail: impl Into<String>) {
@@ -90,8 +93,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn log_is_bounded_and_exports_jsonl() {
-        let log = EventLog::new(RuntimeClock::new(), 2);
+    fn log_is_bounded_and_exports_jsonl() -> eyre::Result<()> {
+        let log = EventLog::new(RuntimeClock::new(), 2)?;
         log.record(EventKind::FaultDetected, Some("svc"), "first");
         log.record(EventKind::RecoveryAttempted, Some("svc"), "second");
         log.record(EventKind::RecoverySucceeded, Some("svc"), "third");
@@ -99,5 +102,11 @@ mod tests {
         assert_eq!(snapshot.len(), 2, "oldest entry must be evicted");
         assert_eq!(snapshot[0].detail, "second");
         assert_eq!(log.to_jsonl().lines().count(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn zero_capacity_is_rejected() {
+        assert!(EventLog::new(RuntimeClock::new(), 0).is_err());
     }
 }

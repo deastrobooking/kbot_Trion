@@ -10,12 +10,12 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 
 | Req ID | Test ID | Test | Type | Pass criteria | Status |
 | --- | --- | --- | --- | --- | --- |
-| TR-P4-001 | RT-01 | `health::tests::publish_reaches_subscriber_and_counts_drops` | Unit | Report reaches subscriber with service/level/timestamp | ✅ |
+| TR-P4-001 | RT-01 | `telemetry::health::tests::publish_reaches_subscriber_and_counts_drops` | Unit | Report reaches subscriber with service/level/timestamp | ✅ |
 | TR-P4-002 | RT-01 | (same — monotonic timestamps) | Unit | Timestamps from single monotonic base | ✅ (robot side) |
 | TR-P4-002 | T-HW-04 | Ground↔robot clock-skew measurement | Hardware | Skew ≤ 50 ms over a session | 🔜 |
-| TR-P4-003 | RT-01, RT-02 | Drop counting + `events::tests::log_is_bounded_and_exports_jsonl` | Unit | No unbounded growth; drops counted; oldest evicted | ✅ |
+| TR-P4-003 | RT-01, RT-02 | Subscriber-overflow accounting + `telemetry::events::tests::log_is_bounded_and_exports_jsonl` | Unit | No unbounded growth; unobserved and lag-evicted reports counted; oldest event evicted | ✅ |
 | TR-P4-010 | RT-03 | `runtime::healthy_service_produces_no_fault` | Integration | Beating service never trips watchdog | ✅ |
-| TR-P4-011 | RT-04 | `runtime::missed_heartbeat_detected_within_bound` | Integration | Detection within (miss_limit + 1) × interval | ✅ |
+| TR-P4-011 | RT-04 | `runtime::missed_heartbeat_detected_within_bound` | Integration | Deterministic paused-time detection at, and not before, (miss_limit + 1) × interval; slow monitor ticks are clamped | ✅ |
 | TR-P4-012 | RT-05 | `runtime::repeated_faults_escalate_to_safe_mode_and_recovery_is_explicit` | Integration | Restart budget exhausted → safe-mode | ✅ |
 | TR-P4-013 | T-SIM-03 | Per-release FDIR sweep (every F-xx entry injected once, e.g. IMU dropout mid-task) | Sim | Each entry: detect → isolate → recover/escalate as specified | 🔜 |
 | TR-P4-020 | RT-05 | Safe-mode state machine entry | Integration | Mode flips, event recorded | ✅ (logic) |
@@ -30,15 +30,15 @@ Test ID conventions: `RT-*` = Rust test implemented in `trion-runtime` · `T-SIM
 | TR-P4-043 | T-SIM-05 | Comms loss during contact (H-10) | Sim | Halt within bound; hold to gate; safe hold after timeout; no unsafe motion | 🔜 |
 | TR-P4-050 | T-SIM-11 | Command auth: role classes, two-step arming, replay rejection | Sim/ground | Unauthorized + unarmed hazardous commands rejected and logged | 🔜 |
 | TR-P4-060 | T-HW-05 | WCET measurement of control path + frame-overrun policy | Hardware | Measured WCET documented; N overruns → safe-mode | 🔜 |
-| TR-P4-070 | CI | clippy + fmt + no-unwrap lint gate | CI | Zero violations on PR | ✅ |
+| TR-P4-070 | CI | clippy + fmt + test + demo gate | CI | Zero violations on PR | ✅ |
 | TR-P4-042 | RT-06 | `command::authority` rejects unauthorized commit-window command | Unit | Unauthorized / unarmed hazardous command rejected and logged | 🔜 |
-| TR-P4-042 | RT-07 | `command::gate` clips out-of-limit actuator command | Unit | Position/velocity/torque clamped to manifest limits | 🔜 |
+| F-09 | RT-07 | `command::gate` clips out-of-limit actuator command and rejects commands in safe-mode | Unit | Position/velocity/torque clamped to manifest limits; unknown/non-finite commands rejected; safe-mode blocks ordinary commands | ✅ (gate) / 🔜 (violation escalation) |
 | TR-P4-050 | RT-06 | (same — role-based auth) | Unit | Role check blocks privileged command | 🔜 |
 | F-05 (IMU stale) | RT-08 | `fdir::imu_monitor` detects stale IMU and emits event | Unit | Missing samples for > threshold → FaultDetected + health Critical | 🔜 |
 | P1 (E-stop) | T-SIM-13 | E-stop stops motion within 100 ms in sim | Sim | Safe-mode entered; zero-torque issued within bound | 🔜 |
 | P1 (E-stop) | T-HW-03 | E-stop during motion | Hardware | Immediate halt regardless of command source; no rebound | 🔜 |
 | P2 (policy service) | T-SIM-12 | `trion-policy-service` runs worksite W1 dry-run | Sim | ONNX inference loop executes without direct hardware deps | 🔜 |
-| P2 (robot manifest) | RT-09 | Robot manifest validation rejects duplicate IDs / bus conflicts | Unit | Startup validation fails with descriptive error | 🔜 |
+| P2 (robot manifest) | RT-09 | Robot manifest validation rejects duplicate IDs and invalid limits | Unit | Startup validation fails with descriptive error; unreviewed manifest refuses hardware approval | ✅ |
 | P3 (skill preconditions) | T-SIM-06 | Skill invoked with failed precondition (e.g., poor localization) | Sim | Skill refuses to start; operator notified | 🔜 |
 
 ## Coverage targets

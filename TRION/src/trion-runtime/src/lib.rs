@@ -14,13 +14,16 @@
 //! perception, network, or mission-control code.
 
 pub mod command;
+pub mod config;
 pub mod fdir;
 pub mod telemetry;
 pub mod time;
 
+pub use command::gate::{ActuatorCommand, CommandGate, GateOutcome};
 pub use command::safe_mode::{ModeController, RunMode};
+pub use config::{ActuatorConfig, RobotManifest};
 pub use fdir::supervisor::{EscalationPolicy, ServiceController, Supervisor};
 pub use fdir::watchdog::{HeartbeatHandle, HeartbeatPolicy, ServiceDown, Watchdog};
 pub use telemetry::events::{EventKind, EventLog, EventRecord};
-pub use telemetry::health::{HealthBus, HealthLevel, HealthReport};
+pub use telemetry::health::{HealthBus, HealthLevel, HealthReceiver, HealthReport};
 pub use time::RuntimeClock;

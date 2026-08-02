@@ -74,17 +74,17 @@ async fn main() -> Result<()> {
         .init();
 
     let clock = RuntimeClock::new();
-    let bus = HealthBus::new(clock, 256);
-    let events = EventLog::new(clock, 1024);
+    let bus = HealthBus::new(clock, 256)?;
+    let events = EventLog::new(clock, 1024)?;
     let modes = ModeController::new(events.clone());
 
-    let mut watchdog = Watchdog::new(clock, Duration::from_millis(25));
+    let mut watchdog = Watchdog::new(clock, Duration::from_millis(25))?;
     let policy = HeartbeatPolicy {
         interval: Duration::from_millis(50),
         miss_limit: 4,
     };
-    let imu = watchdog.register("imu-svc", policy);
-    let actuator = watchdog.register("actuator-svc", policy);
+    let imu = watchdog.register("imu-svc", policy)?;
+    let actuator = watchdog.register("actuator-svc", policy)?;
 
     // Initial spawns: imu-svc crashes at t=2 s (its restart is healthy);
     // actuator-svc crashes at t=4 s and every restart dies again after 300 ms.
@@ -175,7 +175,7 @@ async fn main() -> Result<()> {
     println!("\n=== structured event log (JSONL, TR-P4-030) ===");
     println!("{}", events.to_jsonl());
     println!(
-        "\nhealth reports dropped without a subscriber (TR-P4-003): {}",
+        "\nhealth reports dropped (unobserved or receiver overflow, TR-P4-003): {}",
         bus.dropped_count()
     );
     Ok(())

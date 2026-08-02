@@ -28,11 +28,11 @@ This document is the single source of truth for the next engineering cycle. It p
 | Priority | Initiative | Owner crate / path | Status | Closes |
 |----------|------------|-------------------|--------|--------|
 | P0 | TRION CI + build verification | `.github/workflows/trion-ci.yml` | ✅ Done | TR-P4-070, Phase 0 exit |
-| P0 | MuJoCo worksite W1 | `TRION/sim/w1_panel/` | ✅ Done | Phase 0 digital twin |
-| P1 | Robot configuration manifest | `TRION/config/robot_manifest.yaml` | 🔲 Open | Duplicated config in upstream |
+| P0 | MuJoCo worksite W1 | `TRION/sim/worksites/w1_panel.xml` | ✅ Worksite only | Phase 0 digital-twin fixture |
+| P1 | Robot configuration manifest | `TRION/config/robot_manifest.yaml` | 🟡 Simulation manifest | Duplicated config in upstream |
 | P1 | KOS service safety shim | `TRION/src/trion-runtime/src/kos_shim/` | 🔲 Open | E-stop, safe-mode, command gate |
 | P1 | IMU health monitor + FDIR escalation | `TRION/src/trion-runtime/src/fdir/` | 🔲 Open | F-05 |
-| P1 | Actuator command sanity gate | `TRION/src/trion-runtime/src/command/gate.rs` | 🔲 Open | Joint-limit enforcement |
+| P1 | Actuator command sanity gate | `TRION/src/trion-runtime/src/command/gate.rs` | ✅ Core done | Joint-limit enforcement; KOS integration remains |
 | P1 | Trion policy service (ONNX via KOS) | `TRION/src/trion-policy-service/` | 🔲 Open | Replace direct-hardware inference |
 | P1 | Command authority + command classes | `TRION/src/trion-runtime/src/command/authority.rs` | 🔲 Open | TR-P4-042, TR-P4-050 |
 | P2 | Perception crate | `TRION/src/trion-perception/` | 🔲 Open | P2 localization |
@@ -50,16 +50,17 @@ These items were the original Phase 0 close-out actions. They are now complete i
 
 ### 3.1 TRION CI workflow
 
-`.github/workflows/trion-ci.yml` exists and runs `cargo fmt`, `clippy`, and `test` for `TRION/src` on every PR touching `TRION/**`.
+`.github/workflows/trion-ci.yml` exists and runs `cargo fmt`, `clippy`, and `test` for `TRION/src`, the walking-skeleton demo, and a headless W1 MuJoCo smoke test on every PR touching `TRION/**`.
 
 **What it must do:**
 ```yaml
-- checkout with submodules
+- checkout the repository
 - install Rust stable + clippy + fmt
 - cd TRION/src && cargo fmt --all -- --check
 - cd TRION/src && cargo clippy --all-targets -- -D warnings
 - cd TRION/src && cargo test
 - cd TRION/src && cargo run --bin walking_skeleton (smoke test)
+- python TRION/sim/load_scene.py --steps 2000 (MuJoCo smoke test)
 ```
 
 **Acceptance:** PRs are blocked on formatting, clippy, or test failures. This removes dependency on any single developer's host environment.
@@ -118,7 +119,7 @@ robot:
 
 ### 3.3 MuJoCo worksite W1
 
-`TRION/sim/w1_panel/` exists with a loadable scene and smoke test. Remaining open work: compose the full K-Bot model into the scene and add manipulation-task definitions.
+`TRION/sim/worksites/w1_panel.xml` exists with a loadable scene and smoke test. Remaining open work: compose the full K-Bot model into the scene and add manipulation-task definitions.
 
 ---
 

@@ -1,0 +1,36 @@
+# Simulation safety envelope assembled from the pinned K-Bot joint map and
+# existing deployment limits. A controls/hardware review is required before
+# changing hardware_approved to true.
+manifest_version: "0.1.0"
+hardware_approved: false
+robot:
+  serial: "KBot2-SIM-0001"
+  model: "kbot2"
+  actuators:
+    - { id: 11, name: left_shoulder_pitch, actuator_type: RobStride03, bus: can1, limit_min_deg: 0.0, limit_max_deg: 180.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 12, name: left_shoulder_roll, actuator_type: RobStride03, bus: can1, limit_min_deg: -90.0, limit_max_deg: 27.5, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 13, name: left_shoulder_yaw, actuator_type: RobStride02, bus: can1, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+    - { id: 14, name: left_elbow, actuator_type: RobStride02, bus: can1, limit_min_deg: -145.0, limit_max_deg: 0.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+    - { id: 15, name: left_wrist, actuator_type: RobStride02, bus: can1, limit_min_deg: -180.0, limit_max_deg: 180.0, max_velocity_deg_s: 360.0, max_torque_nm: 1.0, critical: false }
+    - { id: 21, name: right_shoulder_pitch, actuator_type: RobStride03, bus: can2, limit_min_deg: -180.0, limit_max_deg: 0.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 22, name: right_shoulder_roll, actuator_type: RobStride03, bus: can2, limit_min_deg: -27.5, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 23, name: right_shoulder_yaw, actuator_type: RobStride02, bus: can2, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+    - { id: 24, name: right_elbow, actuator_type: RobStride02, bus: can2, limit_min_deg: 0.0, limit_max_deg: 145.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+    - { id: 25, name: right_wrist, actuator_type: RobStride02, bus: can2, limit_min_deg: -180.0, limit_max_deg: 180.0, max_velocity_deg_s: 360.0, max_torque_nm: 1.0, critical: false }
+    - { id: 31, name: left_hip_pitch, actuator_type: RobStride04, bus: can3, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 60.0, critical: true }
+    - { id: 32, name: left_hip_roll, actuator_type: RobStride03, bus: can3, limit_min_deg: -20.0, limit_max_deg: 20.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 33, name: left_hip_yaw, actuator_type: RobStride03, bus: can3, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 34, name: left_knee, actuator_type: RobStride04, bus: can3, limit_min_deg: 0.0, limit_max_deg: 120.0, max_velocity_deg_s: 360.0, max_torque_nm: 60.0, critical: true }
+    - { id: 35, name: left_ankle, actuator_type: RobStride02, bus: can3, limit_min_deg: -40.0, limit_max_deg: 40.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+    - { id: 41, name: right_hip_pitch, actuator_type: RobStride04, bus: can4, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 60.0, critical: true }
+    - { id: 42, name: right_hip_roll, actuator_type: RobStride03, bus: can4, limit_min_deg: -20.0, limit_max_deg: 20.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 43, name: right_hip_yaw, actuator_type: RobStride03, bus: can4, limit_min_deg: -90.0, limit_max_deg: 90.0, max_velocity_deg_s: 360.0, max_torque_nm: 40.0, critical: true }
+    - { id: 44, name: right_knee, actuator_type: RobStride04, bus: can4, limit_min_deg: -120.0, limit_max_deg: 0.0, max_velocity_deg_s: 360.0, max_torque_nm: 60.0, critical: true }
+    - { id: 45, name: right_ankle, actuator_type: RobStride02, bus: can4, limit_min_deg: -40.0, limit_max_deg: 40.0, max_velocity_deg_s: 360.0, max_torque_nm: 14.0, critical: true }
+  imus:
+    - name: base_imu
+      driver: hiwonder
+      interface: /dev/ttyUSB0
+      baud_rate: 9600
+      frequency_hz: 100
+      critical: true

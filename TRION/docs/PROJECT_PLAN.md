@@ -123,7 +123,7 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 ## 4. Phased roadmap
 
 ### Phase 0 — Foundations (now)
-- [ ] Stand up dev environment: cross-compile toolchain, sim running locally, CI skeleton.
+- [ ] Stand up dev environment: native Rust gates and CI are green; cross-compile verification and the composed K-Bot simulation remain open.
 - [x] `TRION/src/trion-runtime` crate: health-telemetry bus + heartbeat watchdog + FDIR escalation + safe-mode (walking skeleton of P4; requirement-traced tests + demo).
 - [x] **Preliminary Hazard Analysis (PHA) v0 and safety case skeleton** ([PHA.md](PHA.md)) feeding the FDIR matrix.
 - [x] **Comms & time-sync model**: latency budgets, single time base, delay-tolerant command classes (in [REQUIREMENTS.md](REQUIREMENTS.md)).
@@ -139,9 +139,9 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
   - Acceptance: a safe-mode command stops all actuator motion within 100 ms in sim.
 - [ ] Trion policy service (`TRION/src/trion-policy-service/`): ONNX inference via KOS gRPC, commands routed through the safety shim.
   - Acceptance: `run_model` equivalent executes in `TRION/sim/w1_panel` without direct hardware dependencies.
-- [ ] Robot configuration manifest (`TRION/config/robot_manifest.yaml`) consumed by `trion-runtime`, `trion-policy-service`, and a Python generator for `ksim-kbot/deploy`.
+- [ ] Robot configuration manifest (`TRION/config/robot_manifest.yaml`): validated simulation manifest and runtime loader are implemented; hardware review plus policy-service/Python consumers remain open.
 - [ ] Command authority layer (`TRION/src/trion-runtime/src/command/`): immediate / queued / commit-window command classes + two-step arming.
-- [ ] Actuator command sanity gate (`TRION/src/trion-runtime/src/command/gate.rs`): independent joint-limit, velocity, and torque enforcement before KOS.
+- [x] Actuator command sanity gate (`TRION/src/trion-runtime/src/command/gate.rs`): independent joint-limit, velocity, and torque enforcement plus safe-mode rejection; KOS forwarding integration is tracked in the safety shim item.
 - [ ] Session recording/replay (`krec`) wired into every run; telemetry + event schemas implemented.
 - [ ] Shared-control grasp: operator designates target, robot executes force-limited grasp.
 - [ ] First two skills on real hardware at L0–L1: *inspect fixture* (T-01) and *actuate handle* (T-02).
@@ -187,8 +187,10 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 1. ~~Scaffold `TRION/src/trion-runtime` (Rust workspace) with the health-telemetry + watchdog + safe-mode walking skeleton.~~ **Done** — see [src/trion-runtime/](../src/trion-runtime/).
 2. ~~Write [REQUIREMENTS.md](REQUIREMENTS.md) v0, [FDIR_MATRIX.md](FDIR_MATRIX.md) v0, [PHA.md](PHA.md) v0.~~ **Done.**
 3. ~~Write [AUTONOMY_LEVELS.md](AUTONOMY_LEVELS.md) and [WORKSITES_AND_TASKS.md](WORKSITES_AND_TASKS.md).~~ **Done.**
-4. Scaffold `TRION/sim/` with the digital-twin worksite scene (W1).
-5. CI skeleton: build + test + clippy for `TRION/src` on every PR (TR-P4-070 gate).
+4. ~~Scaffold `TRION/sim/` with the digital-twin worksite scene (W1).~~ **Done for the worksite** — K-Bot composition remains open.
+5. ~~CI skeleton: build + test + clippy for `TRION/src` on every PR (TR-P4-070 gate).~~ **Done**, including the W1 MuJoCo smoke test.
+6. Compose K-Bot into W1 and connect simulated health/fault signals to `trion-runtime`.
+7. Record a human PHA v0 review and sign-off.
 
 ---
 

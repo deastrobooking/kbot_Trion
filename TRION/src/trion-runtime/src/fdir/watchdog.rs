@@ -50,16 +50,38 @@ pub struct Watchdog {
 }
 
 impl Watchdog {
-    pub fn new(clock: RuntimeClock, tick: Duration) -> Self {
-        Self {
+    pub fn new(clock: RuntimeClock, tick: Duration) -> eyre::Result<Self> {
+        if tick.is_zero() {
+            return Err(eyre::eyre!("watchdog tick must be greater than zero"));
+        }
+        Ok(Self {
             clock,
             entries: Vec::new(),
             tick,
-        }
+        })
     }
 
     /// Register a service (TR-P4-010). Registration counts as the first beat.
-    pub fn register(&mut self, name: &str, policy: HeartbeatPolicy) -> HeartbeatHandle {
+    pub fn register(
+        &mut self,
+        name: &str,
+        policy: HeartbeatPolicy,
+    ) -> eyre::Result<HeartbeatHandle> {
+        if name.is_empty() {
+            return Err(eyre::eyre!("watchdog service name must not be empty"));
+        }
+        if policy.interval.is_zero() {
+            return Err(eyre::eyre!("heartbeat interval must be greater than zero"));
+        }
+        if policy.miss_limit == 0 {
+            return Err(eyre::eyre!(
+                "heartbeat miss limit must be greater than zero"
+            ));
+        }
+        // Sampling at least once per heartbeat interval makes the maximum
+        // detection delay `(miss_limit + 1) * interval` (TR-P4-011), even if
+        // the caller supplied a slower default monitor tick.
+        self.tick = self.tick.min(policy.interval);
         let cell = Arc::new(AtomicU64::new(self.clock.now_ms()));
         self.entries.push(Entry {
             name: name.to_owned(),
@@ -67,10 +89,10 @@ impl Watchdog {
             last_beat_ms: Arc::clone(&cell),
             down_reported: false,
         });
-        HeartbeatHandle {
+        Ok(HeartbeatHandle {
             last_beat_ms: cell,
             clock: self.clock,
-        }
+        })
     }
 
     /// Monitor loop. Each fault is reported once per outage; a service that

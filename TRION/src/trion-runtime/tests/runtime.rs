@@ -17,25 +17,36 @@ impl ServiceController for OkController {
 }
 
 /// TR-P4-011: missed heartbeats are detected within (miss_limit + 1) × interval.
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn missed_heartbeat_detected_within_bound() -> eyre::Result<()> {
     let clock = RuntimeClock::new();
-    let mut watchdog = Watchdog::new(clock, Duration::from_millis(10));
-    // interval 20 ms, miss_limit 3 → detection bound (3 + 1) × 20 = 80 ms; the
-    // 200 ms timeout leaves slack for scheduler jitter while staying bounded.
+    // Deliberately request a monitor tick slower than the heartbeat interval;
+    // registration must clamp it so the TR-P4-011 bound remains enforceable.
+    let mut watchdog = Watchdog::new(clock, Duration::from_millis(500))?;
+    // interval 20 ms, miss_limit 3 → detection bound (3 + 1) × 20 = 80 ms.
     let _handle = watchdog.register(
         "svc",
         HeartbeatPolicy {
             interval: Duration::from_millis(20),
             miss_limit: 3,
         },
-    );
+    )?;
     let (fault_tx, mut fault_rx) = mpsc::channel(4);
     let (_shutdown_tx, shutdown_rx) = watch::channel(false);
     tokio::spawn(watchdog.run(fault_tx, shutdown_rx));
 
-    let fault = tokio::time::timeout(Duration::from_millis(200), fault_rx.recv())
-        .await?
+    tokio::time::advance(Duration::from_millis(79)).await;
+    tokio::task::yield_now().await;
+    assert!(
+        fault_rx.try_recv().is_err(),
+        "fault must not be emitted before the requirement bound"
+    );
+
+    tokio::time::advance(Duration::from_millis(1)).await;
+    tokio::task::yield_now().await;
+    let fault = fault_rx
+        .recv()
+        .await
         .ok_or_else(|| eyre::eyre!("fault channel closed before detection"))?;
     assert_eq!(fault.service, "svc");
     assert!(
@@ -49,14 +60,14 @@ async fn missed_heartbeat_detected_within_bound() -> eyre::Result<()> {
 #[tokio::test]
 async fn healthy_service_produces_no_fault() -> eyre::Result<()> {
     let clock = RuntimeClock::new();
-    let mut watchdog = Watchdog::new(clock, Duration::from_millis(10));
+    let mut watchdog = Watchdog::new(clock, Duration::from_millis(10))?;
     let handle = watchdog.register(
         "svc",
         HeartbeatPolicy {
             interval: Duration::from_millis(20),
             miss_limit: 3,
         },
-    );
+    )?;
     let (fault_tx, mut fault_rx) = mpsc::channel(4);
     let (_shutdown_tx, shutdown_rx) = watch::channel(false);
     tokio::spawn(watchdog.run(fault_tx, shutdown_rx));
@@ -80,7 +91,7 @@ async fn healthy_service_produces_no_fault() -> eyre::Result<()> {
 #[tokio::test]
 async fn repeated_faults_escalate_to_safe_mode_and_recovery_is_explicit() -> eyre::Result<()> {
     let clock = RuntimeClock::new();
-    let events = EventLog::new(clock, 64);
+    let events = EventLog::new(clock, 64)?;
     let modes = ModeController::new(events.clone());
     let supervisor = Supervisor::new(
         OkController,
