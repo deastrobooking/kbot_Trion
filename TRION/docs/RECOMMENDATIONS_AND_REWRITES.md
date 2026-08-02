@@ -36,7 +36,7 @@ This document is the single source of truth for the next engineering cycle. It p
 | P1 | Trion policy service (ONNX via KOS) | `TRION/src/trion-policy-service/` | 🔲 Open | Replace direct-hardware inference |
 | P1 | Command authority + command classes | `TRION/src/trion-runtime/src/command/authority.rs` | ✅ Core done | TR-P4-042, TR-P4-050; credential adapter + queue execution remain |
 | P2 | Perception crate | `TRION/src/trion-perception/` | 🔲 Open | P2 localization |
-| P2 | Skill crate + autonomy ladder | `TRION/src/trion-skills/` | 🟡 Executor + envelopes | Motion runners, force limits, evidence |
+| P2 | Skill crate + autonomy ladder | `TRION/src/trion-skills/` | 🟡 Executor + W1 inspect runner | MuJoCo/perception adapters, contact runners, force limits, evidence |
 | P2 | Full FDIR matrix (F-02…F-08) | `TRION/src/trion-runtime/src/fdir/` | 🔲 Open | P4 runtime |
 | P2 | Mission-control crate | `TRION/src/mission-control/` | 🔲 Open | P5 ground segment |
 | P3 | Manipulation policy training | `TRION/sim/` + `ksim-kbot` tasks | 🔲 Open | Phase 3 ISAM skills |
@@ -424,7 +424,7 @@ impl RobotManifest {
 
 **Design rule:** every skill returns a `SkillOutcome` that is recorded in the event log. Skills never command actuators directly; they request commands through the command authority layer.
 
-**Implemented foundation:** `model.rs` defines the serializable plan and skill envelopes; `executor.rs` provides bounded validation/execution, live conditions, deadlines, authenticated gates, and structured lifecycle events; `skills.rs` defines conservative initial ceilings for T-01/T-02/T-03. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md). Concrete motion runners and authority/safety-shim command forwarding remain open.
+**Implemented foundation:** `model.rs` defines the serializable plan and skill envelopes; `executor.rs` provides bounded validation/execution, live conditions, deadlines, authenticated gates, and structured lifecycle events; `skills.rs` defines conservative initial ceilings for T-01/T-02/T-03. `w1_inspect.rs` implements T-01 clearance waypoints, exact named-target observation records, queued authority + safety-shim forwarding, and immediate safe-state on active abort. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md). MuJoCo/perception adapters and contact-skill runners remain open.
 
 ### 5.3 `TRION/src/mission-control/`
 

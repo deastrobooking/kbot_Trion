@@ -17,7 +17,7 @@ Phase focus: L0–L3 are the Phase 1–2 targets; L4 is the Phase 3 target; L5 i
 
 ## Implementation status
 
-The Phase 2 executor now enforces registered autonomy ceilings during whole-plan validation and requires an authenticated Operator or Supervisor at every L3 gate. The initial code-level ceilings are deliberately conservative: `inspect_fixture` and `actuate_handle` are L2, and `mate_connector` is L1. These are execution envelopes, not promotion claims; motion implementations and the evidence campaigns below remain open. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md).
+The Phase 2 executor now enforces registered autonomy ceilings during whole-plan validation and requires an authenticated Operator or Supervisor at every L3 gate. The initial code-level ceilings are deliberately conservative: `inspect_fixture` and `actuate_handle` are L2, and `mate_connector` is L1. The W1 inspection runner exercises the L2 control path through an in-memory adapter, but this is not promotion evidence; MuJoCo/hardware campaigns and the remaining motion implementations are open. See [TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md).
 
 ## Promotion criteria
 

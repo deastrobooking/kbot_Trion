@@ -33,6 +33,7 @@ Test ID conventions: `RT-*` = Rust test implemented in the Trion Rust workspace 
 | TR-P4-070 | CI | clippy + fmt + test + demo gate | CI | Zero violations on PR | ✅ |
 | TR-P4-042 | RT-06 | `command::authority` class and commit-window tests | Unit | Authenticated immediate safety path remains available; queued role checks enforced; unarmed, expired, mismatched, or consumed approvals rejected and logged | ✅ |
 | TR-P4-042 | RT-11 | `trion-skills::executor` precondition, timeout, gate, abort, capacity, and multi-step tests | Unit | Invalid plans are rejected; failed preconditions block start; timeouts and abort facts stop execution; exact authenticated gate approval is required; plan and registries remain bounded | ✅ (executor core) / 🔜 (MuJoCo coupling) |
+| TR-P4-042, TR-P4-020 | RT-12 | `w1_inspect::tests::plan_executes_w1_inspection_through_authority_and_shim` + fault-abort test | Integration | Both W1 waypoint batches receive queued authorization and pass the actuator gate; injected active fault receives immediate authorization and commands 20-actuator safe-state | ✅ (in-memory transport) / 🔜 (MuJoCo transport) |
 | F-09 | RT-07 | `command::gate` clips out-of-limit actuator command and rejects commands in safe-mode | Unit | Position/velocity/torque clamped to manifest limits; unknown/non-finite commands rejected; safe-mode blocks ordinary commands | ✅ (gate) / 🔜 (violation escalation) |
 | TR-P4-050 | RT-06 | Role, anti-replay, capacity, and two-step approval tests | Unit | Unauthenticated and underprivileged commands rejected; queued/commit replay rejected; authority state bounded | ✅ (authority) / 🔜 (credential adapter + security review) |
 | F-05 (IMU stale) | RT-08 | `fdir::imu_monitor` detects stale IMU and emits event | Unit | Missing samples for > threshold → FaultDetected + health Critical | 🔜 |
@@ -43,6 +44,7 @@ Test ID conventions: `RT-*` = Rust test implemented in the Trion Rust workspace 
 | Phase 0 digital twin | T-SIM-14 | `compose_w1_kbot.py` loads pinned K-Bot + W1 | Sim | Named robot, fixture targets, 20 actuators, and finite state after 100 steps | ✅ |
 | P3 (skill preconditions) | RT-11 | Skill invoked with failed precondition (e.g., poor localization) | Unit | Skill runner is not started; wait state identifies missing facts; deadline abort is recorded | ✅ |
 | P3 (skill preconditions) | T-SIM-06 | Skill invoked with failed precondition (e.g., poor localization) | Sim | Skill refuses to start; operator notified | 🔜 |
+| P1/P3 (T-01 inspect) | RT-12 | W1 target/profile and end-to-end inspection-runner tests | Integration | Named W1 targets exist; waypoint commands fit the manifest without clamping; two observation records produced; plan completes | ✅ (adapter boundary) / 🔜 (rendered imagery) |
 
 ## Coverage targets
 

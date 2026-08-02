@@ -23,7 +23,7 @@ The next milestone is one vertical safety demonstration: **K-Bot in W1 receives 
 | Command safety gate | 🟡 Core verified | Manifest validation, limit clamping, unknown/non-finite rejection, and safe-mode rejection are unit tested; KOS integration remains open |
 | Command authority | ✅ Core verified | Authenticated roles, immediate/queued/commit-window classes, bounded anti-replay state, expiring one-shot approvals, and structured decisions are unit tested; credential adapter and queue execution remain open |
 | Safety shim | 🟡 Core verified | Supervisor fault escalation reaches a simulated 20-actuator safe-state transport within the 100 ms bound; real KOS/MuJoCo transports remain open |
-| Phase 2 plan executor | 🟡 Foundation verified | Canonical JSON plan, bounded validation/execution, autonomy ceilings, preconditions, aborts, timeouts, authenticated gates, and structured events are unit tested; skill motion, mission control, and MuJoCo coupling remain open |
+| Phase 2 plan + W1 inspection | 🟡 Foundation verified | Canonical JSON plan, bounded execution, authenticated gates, and a concrete inspection runner through authority/safety-shim are unit tested; the observation/actuator adapters are still in-memory, with mission control and MuJoCo coupling open |
 | Fault-injected integrated MuJoCo | 🔴 | Runtime and the composed physics model remain separate processes |
 
 ## Phase 0 exit assessment
@@ -49,7 +49,7 @@ The runtime tests prove fault escalation through the transport boundary, and the
 6. ~~Implement the bounded command-authority core and two-step arming (TR-P4-042/TR-P4-050).~~ **Done.**
 7. ~~Implement the bounded queued task-plan executor with preconditions, aborts, timeouts, and human gates.~~ **Core done.** Next, connect verified credentials, mission-control upload, commit-window contact authorization, and the safety shim.
 8. Add the IMU staleness monitor and its fault-injection scenario (F-05).
-9. Add the first concrete `inspect_fixture` runner against W1, with its commands routed through authority and the safety shim.
+9. ~~Add the first concrete `inspect_fixture` runner against W1, with its commands routed through authority and the safety shim.~~ **In-memory integration done.** Next, implement MuJoCo actuator/observation adapters and measure waypoint completion plus safe-state response in the composed scene.
 10. Add session recording and the first mission-control plan/health display.
 
 ## Current risks

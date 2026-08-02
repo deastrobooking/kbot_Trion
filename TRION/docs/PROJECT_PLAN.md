@@ -150,7 +150,7 @@ Rules of engagement (per [CONTRIBUTING.md](CONTRIBUTING.md)): upstream submodule
 
 ### Phase 2 — Supervised autonomy (active foundation; Dextre/Astrobee level)
 - [x] Task-plan format + bounded deterministic executor with preconditions, abort conditions, timeouts, autonomy ceilings, structured events, and authenticated human go/no-go gates ([TASK_PLAN_FORMAT.md](TASK_PLAN_FORMAT.md)). Mission-control upload, durable plan state, commit-window coupling, and sim execution remain integration work.
-- [ ] Trion skill crate (`TRION/src/trion-skills/`): crate and execution envelopes are implemented for inspection (L2 ceiling), handle actuation (L2), and connector mate (L1); motion runners, force envelopes, and promotion evidence remain open.
+- [ ] Trion skill crate (`TRION/src/trion-skills/`): crate and execution envelopes are implemented for inspection (L2 ceiling), handle actuation (L2), and connector mate (L1). The W1 inspection runner executes bounded clearance waypoints through authority + safety shim and exposes a checked observation adapter; MuJoCo/perception adapters, handle/connector motion runners, force envelopes, and promotion evidence remain open.
 - [ ] Trion perception crate (`TRION/src/trion-perception/`): vision localization against the mapped worksite; fixture recognition for the skill library.
 - [ ] Sim-gating pipeline: plans must pass fault-injected sim runs before hardware execution.
 - [ ] FDIR v1: full detect/isolate/recover matrix (F-02…F-08), safe-mode entry demonstrated from every fault class.

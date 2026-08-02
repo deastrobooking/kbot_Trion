@@ -7,7 +7,7 @@ The Cargo workspace for all Trion on-robot and ground-segment code. One crate pe
 | Crate | Status | Pillar | Purpose |
 | --- | --- | --- | --- |
 | [`trion-runtime`](trion-runtime/) | ✅ active | P4 | Safety-critical supervision: health telemetry, watchdogs, FDIR escalation, safe-mode. **Must never depend on perception/network/mission-control code (TR-P4-022).** |
-| [`trion-skills`](trion-skills/) | 🟡 Phase 2 foundation | P1/P3 | Bounded task-plan executor, autonomy ceilings, human gates, and initial inspect/handle/connector execution envelopes; motion runners remain open |
+| [`trion-skills`](trion-skills/) | 🟡 Phase 2 integration | P1/P3 | Bounded plan executor, human gates, initial skill envelopes, and W1 inspection runner through command authority/safety shim; MuJoCo/perception adapters remain open |
 | `trion-perception` | planned (Phase 2) | P2 | Localization, fixture recognition, worksite mapping — non-safety-critical tier |
 | `mission-control` | planned (Phase 1) | P5 | Ground console: plan upload/review, telemetry dashboards, command classes/auth client |
 
